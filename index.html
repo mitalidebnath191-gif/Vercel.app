@@ -81,7 +81,10 @@
             { id: 'globalchat', name: 'Global Chat', icon: 'fa-globe', emoji: '🌍', color: 'emerald', load: () => loadFeature(`<div class="max-w-2xl mx-auto h-full flex flex-col"><h1 class="text-2xl font-semibold mb-4 text-emerald-400">🌍 Global Live Chat</h1><div id="globalChatBox" class="flex-1 bg-zinc-900 rounded-2xl p-4 overflow-y-auto flex flex-col gap-2 mb-4"></div><div class="flex gap-2"><input id="globalUserInput" type="text" placeholder="Type live message..." class="flex-1 bg-zinc-800 rounded-xl px-4 py-3" onkeypress="if(event.key==='Enter') sendGlobalChatMessage()"><button onclick="sendGlobalChatMessage()" class="px-6 bg-emerald-600 rounded-xl font-semibold">Send</button></div></div>`, () => window.startGlobalChatListener ? window.startGlobalChatListener() : null) },
             { id: 'image', name: 'Image Studio', icon: 'fa-image', emoji: '🎨', color: 'fuchsia', load: () => loadFeature(`<div class="max-w-xl mx-auto"><h1 class="text-2xl font-semibold mb-4">🎨 Image Generator</h1><div class="flex gap-2"><input id="imagePrompt" type="text" value="Futuristic city" class="flex-1 bg-zinc-800 rounded-xl px-4 py-3"><button onclick="generateImage()" class="px-6 bg-fuchsia-600 rounded-xl font-semibold">Generate</button></div><div id="imageResult" class="mt-6 min-h-[300px] bg-zinc-900 rounded-2xl flex items-center justify-center overflow-hidden border border-white/5"></div></div>`) },
             { id: 'python', name: 'Python Lab', icon: 'fa-python', emoji: '🐍', color: 'amber', load: () => loadFeature(`<div class="max-w-2xl mx-auto"><h1 class="text-2xl font-semibold mb-4">🐍 Python Lab</h1><textarea id="pythonCode" class="w-full h-48 bg-zinc-900 rounded-2xl p-4 font-mono text-sm">print("Hello NEXUS Python")</textarea><button onclick="runPythonCode()" class="mt-3 px-6 py-2 bg-emerald-600 rounded-xl">Run Code</button><pre id="pythonOutput" class="mt-4 w-full h-32 bg-black rounded-xl p-4 font-mono text-xs text-emerald-300 overflow-auto"></pre></div>`) },
-            { id: 'terminal', name: 'Code Lab', icon: 'fa-terminal', emoji: '💻', color: 'cyan', load: () => loadFeature(`<div class="max-w-4xl mx-auto"><h1 class="text-2xl font-semibold mb-4">💻 Code Lab</h1><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><textarea id="codeInput" class="h-48 bg-zinc-900 rounded-2xl p-4 font-mono text-sm">&lt;h1 style="color:#10b981;text-align:center;"&gt;NEXUS Web&lt;/h1&gt;</textarea><iframe id="previewFrame" class="h-48 bg-white rounded-2xl w-full"></iframe></div><button onclick="runCode()" class="mt-3 px-6 py-2 bg-emerald-600 rounded-xl">Run HTML</button></div>`) }
+            { id: 'terminal', name: 'Code Lab', icon: 'fa-terminal', emoji: '💻', color: 'cyan', load: () => loadFeature(`<div class="max-w-4xl mx-auto"><h1 class="text-2xl font-semibold mb-4">💻 Code Lab</h1><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><textarea id="codeInput" class="h-48 bg-zinc-900 rounded-2xl p-4 font-mono text-sm">&lt;h1 style="color:#10b981;text-align:center;"&gt;NEXUS Web&lt;/h1&gt;</textarea><iframe id="previewFrame" class="h-48 bg-white rounded-2xl w-full"></iframe></div><button onclick="runCode()" class="mt-3 px-6 py-2 bg-emerald-600 rounded-xl">Run HTML</button></div>`) },
+            
+            // নতুন যোগ করা Weather ফিচার (বাকি সব আগের মতোই আছে)
+            { id: 'weather', name: 'Live Weather', icon: 'fa-cloud-sun', emoji: '⛅', color: 'sky', load: () => loadFeature(`<div class="max-w-md mx-auto"><h1 class="text-2xl font-semibold mb-4 text-sky-400">⛅ Live Weather</h1><div class="flex gap-2 mb-4"><input id="cityInput" type="text" placeholder="যেমন: Bardhaman" class="flex-1 bg-zinc-800 rounded-xl px-4 py-3" onkeypress="if(event.key==='Enter') getWeather()"><button onclick="getWeather()" class="px-6 bg-sky-600 rounded-xl font-semibold">Search</button></div><div id="weatherResult" class="bg-zinc-900 rounded-2xl p-6 text-center border border-white/5 hidden"></div></div>`) }
         ];
 
         function showToast(msg) { const t = document.getElementById("toast"); t.innerText = msg; t.classList.remove("hidden"); setTimeout(() => t.classList.add("hidden"), 2000); }
@@ -115,6 +118,30 @@
 
         function runCode() { const doc = document.getElementById("previewFrame").contentWindow.document; doc.open(); doc.write(document.getElementById("codeInput").value); doc.close(); }
 
+        // Weather ফাংশন (যেকোনো জেলার নাম দিয়ে সার্চ করার জন্য)
+        async function getWeather() {
+            const cityInput = document.getElementById("cityInput");
+            if (!cityInput) return;
+            const city = cityInput.value.trim() || "Bardhaman"; 
+            const resultDiv = document.getElementById("weatherResult");
+            resultDiv.classList.remove("hidden");
+            resultDiv.innerHTML = `<div class="animate-spin w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full mx-auto"></div>`;
+            try {
+                const res = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+                if(!res.ok) throw new Error("Not found");
+                const data = await res.json();
+                const current = data.current_condition[0];
+                resultDiv.innerHTML = `
+                    <div class="text-5xl font-bold mb-3 text-white">${current.temp_C}°C</div>
+                    <div class="text-zinc-300 text-xl capitalize mb-2">${current.weatherDesc[0].value}</div>
+                    <div class="text-sm text-zinc-400">Feels like: ${current.FeelsLikeC}°C | Humidity: ${current.humidity}%</div>
+                    <div class="text-sm text-sky-400 mt-3 font-semibold"><i class="fa-solid fa-location-dot"></i> ${city.toUpperCase()}</div>
+                `;
+            } catch(e) {
+                resultDiv.innerHTML = `<div class="text-red-400 py-2">"${city}" নামের জায়গাটি পাওয়া যায়নি। দয়া করে সঠিক বানান লিখুন।</div>`;
+            }
+        }
+
         // Navigation Setup
         function navigateTo(page) {
             if (page === 'home') {
@@ -130,5 +157,4 @@
         }
     </script>
 </body>
-  </html>
-  
+</html>
