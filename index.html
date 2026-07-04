@@ -48,6 +48,6 @@
         window.startGlobalChatListener = () => { if (isListening) return; isListening = true; onChildAdded(messagesRef, (snap) => { const data = snap.val(); const chatBox = document.getElementById("globalChatBox"); if (chatBox) { const isMe = data.name === myUsername; chatBox.innerHTML += `<div class="chat-message ${isMe?'global-msg-me':'global-msg-other'} max-w-md"><span class="text-[10px] opacity-70 mb-1 uppercase">${isMe?'You':data.name}</span><span class="text-sm">${data.text}</span></div>`; chatBox.scrollTop = chatBox.scrollHeight; } }); };
     </script>
     <script src="index.js"></script>
+    <script src="apk.js"></script>
 </body>
-</html>                                                                                                                                                      </html>
-                                                                                                                                                         
+</html>
