@@ -1,39 +1,48 @@
-// AI Chat-এর ভেতরে Fun Tools ইনজেক্ট করার লজিক
+// AI Chat-এর ভেতরে Fun Tools ইনজেক্ট করার লজিক (Hide/Show ফিচার সহ)
 const injectToAiChat = setInterval(() => {
     // AI Chat পেজটি খুঁজে বের করা
     const chatTitle = Array.from(document.querySelectorAll('h1, h2, div')).find(el => el.innerText && el.innerText.includes('AI Chat'));
     
-    if (chatTitle && !document.getElementById('fun-tools-container')) {
+    if (chatTitle && !document.getElementById('fun-tools-wrapper')) {
         const chatContainer = chatTitle.parentElement;
-        const toolsDiv = document.createElement('div');
-        toolsDiv.id = 'fun-tools-container';
-        toolsDiv.className = "mt-4 p-4 bg-zinc-900 rounded-2xl border border-white/10 shadow-lg";
+        const toolsWrapper = document.createElement('div');
+        toolsWrapper.id = 'fun-tools-wrapper';
+        toolsWrapper.className = "mt-2 p-2 bg-zinc-900 rounded-2xl border border-white/10 shadow-lg mx-2 z-50 relative";
         
-        toolsDiv.innerHTML = `
-            <h2 class="text-lg font-bold mb-3 text-amber-400">🎉 Fun & Entertainment API</h2>
-            <div class="grid grid-cols-3 gap-2 mb-4 max-h-32 overflow-y-auto pr-1">
-                <button onclick="runFunAPI('jokeapi')" class="bg-blue-600 p-2 rounded-lg text-xs text-white">😂 JokeAPI</button>
-                <button onclick="runFunAPI('dadjoke')" class="bg-blue-500 p-2 rounded-lg text-xs text-white">👨 Dad Joke</button>
-                <button onclick="runFunAPI('chuck')" class="bg-orange-600 p-2 rounded-lg text-xs text-white">💪 Chuck Norris</button>
-                <button onclick="runFunAPI('bored')" class="bg-teal-500 p-2 rounded-lg text-xs text-white">🎲 Random Activity</button>
-                <button onclick="runFunAPI('cat')" class="bg-pink-500 p-2 rounded-lg text-xs text-white">🐱 Cat Fact</button>
-                <button onclick="runFunAPI('dog')" class="bg-amber-600 p-2 rounded-lg text-xs text-white">🐶 Dog Pic</button>
-                <button onclick="runFunAPI('duck')" class="bg-yellow-500 p-2 rounded-lg text-xs text-white">🦆 Duck Pic</button>
-                <button onclick="runFunAPI('fox')" class="bg-orange-500 p-2 rounded-lg text-xs text-white">🦊 Fox Pic</button>
-                <button onclick="runFunAPI('fact')" class="bg-indigo-500 p-2 rounded-lg text-xs text-white">🤯 Useless Fact</button>
-                <button onclick="runFunAPI('yesno')" class="bg-green-600 p-2 rounded-lg text-xs text-white">👍 Yes/No</button>
-                <button onclick="runFunAPI('advice')" class="bg-cyan-600 p-2 rounded-lg text-xs text-white">💡 Advice</button>
-                <button onclick="runFunAPI('excuse')" class="bg-purple-500 p-2 rounded-lg text-xs text-white">🙈 Excuse</button>
-                <button onclick="runFunAPI('insult')" class="bg-red-600 p-2 rounded-lg text-xs text-white">😅 Insult</button>
-                <button onclick="runFunAPI('swanson')" class="bg-stone-600 p-2 rounded-lg text-xs text-white">📺 Ron Swanson</button>
+        // Hide/Show করার জন্য HTML স্ট্রাকচার
+        toolsWrapper.innerHTML = `
+            <!-- উপরের ক্লিক করার জায়গা (Toggle Bar) -->
+            <div onclick="document.getElementById('fun-tools-content').classList.toggle('hidden')" 
+                 class="cursor-pointer flex justify-between items-center bg-zinc-800 p-3 rounded-xl hover:bg-zinc-700 transition">
+                <span class="font-bold text-amber-400 text-sm">🎉 Fun API Tools</span>
+                <span class="text-xs bg-black px-2 py-1 rounded text-white border border-zinc-600">Show / Hide ↕️</span>
             </div>
-            <div class="bg-black p-3 rounded-lg border border-zinc-800 text-center">
-                <div id="funOutput" class="text-sm text-white whitespace-pre-wrap">Click a button to get started!</div>
-                <div id="funImgOutput" class="mt-2 hidden flex justify-center"></div>
+
+            <!-- লুকানো অংশ (Hidden by default) -->
+            <div id="fun-tools-content" class="hidden mt-3">
+                <div class="grid grid-cols-3 gap-2 mb-4 max-h-40 overflow-y-auto pr-1">
+                    <button onclick="runFunAPI('jokeapi')" class="bg-blue-600 p-2 rounded-lg text-[10px] text-white">😂 JokeAPI</button>
+                    <button onclick="runFunAPI('dadjoke')" class="bg-blue-500 p-2 rounded-lg text-[10px] text-white">👨 Dad Joke</button>
+                    <button onclick="runFunAPI('chuck')" class="bg-orange-600 p-2 rounded-lg text-[10px] text-white">💪 Chuck Norris</button>
+                    <button onclick="runFunAPI('bored')" class="bg-teal-500 p-2 rounded-lg text-[10px] text-white">🎲 Random</button>
+                    <button onclick="runFunAPI('cat')" class="bg-pink-500 p-2 rounded-lg text-[10px] text-white">🐱 Cat Fact</button>
+                    <button onclick="runFunAPI('dog')" class="bg-amber-600 p-2 rounded-lg text-[10px] text-white">🐶 Dog Pic</button>
+                    <button onclick="runFunAPI('duck')" class="bg-yellow-500 p-2 rounded-lg text-[10px] text-white">🦆 Duck Pic</button>
+                    <button onclick="runFunAPI('fox')" class="bg-orange-500 p-2 rounded-lg text-[10px] text-white">🦊 Fox Pic</button>
+                    <button onclick="runFunAPI('fact')" class="bg-indigo-500 p-2 rounded-lg text-[10px] text-white">🤯 Useless Fact</button>
+                    <button onclick="runFunAPI('yesno')" class="bg-green-600 p-2 rounded-lg text-[10px] text-white">👍 Yes/No</button>
+                    <button onclick="runFunAPI('advice')" class="bg-cyan-600 p-2 rounded-lg text-[10px] text-white">💡 Advice</button>
+                    <button onclick="runFunAPI('excuse')" class="bg-purple-500 p-2 rounded-lg text-[10px] text-white">🙈 Excuse</button>
+                    <button onclick="runFunAPI('insult')" class="bg-red-600 p-2 rounded-lg text-[10px] text-white">😅 Insult</button>
+                    <button onclick="runFunAPI('swanson')" class="bg-stone-600 p-2 rounded-lg text-[10px] text-white">📺 Swanson</button>
+                </div>
+                <div class="bg-black p-3 rounded-lg border border-zinc-800 text-center">
+                    <div id="funOutput" class="text-xs text-white whitespace-pre-wrap">Result will show here...</div>
+                    <div id="funImgOutput" class="mt-2 hidden flex justify-center"></div>
+                </div>
             </div>
         `;
-        // AI Chat-এর কন্টেনারের শুরুতে বসিয়ে দেওয়া হচ্ছে
-        chatContainer.insertBefore(toolsDiv, chatContainer.children[1]); 
+        chatContainer.insertBefore(toolsWrapper, chatContainer.children[1]); 
     }
 }, 1000);
 
@@ -77,21 +86,21 @@ window.runFunAPI = async (type) => {
         else if (type === 'dog') {
             const res = await fetch("https://dog.ceo/api/breeds/image/random");
             const data = await res.json();
-            imgOut.innerHTML = `<img src="${data.message}" class="max-h-40 rounded-xl border border-white/20">`;
+            imgOut.innerHTML = `<img src="${data.message}" class="max-h-32 rounded-xl border border-white/20">`;
             imgOut.classList.remove("hidden");
             responseText = "Here is a good boy! 🐶";
         } 
         else if (type === 'duck') {
             const res = await fetch("https://random-d.uk/api/random");
             const data = await res.json();
-            imgOut.innerHTML = `<img src="${data.url}" class="max-h-40 rounded-xl border border-white/20">`;
+            imgOut.innerHTML = `<img src="${data.url}" class="max-h-32 rounded-xl border border-white/20">`;
             imgOut.classList.remove("hidden");
             responseText = "Quack Quack! 🦆";
         } 
         else if (type === 'fox') {
             const res = await fetch("https://randomfox.ca/floof/");
             const data = await res.json();
-            imgOut.innerHTML = `<img src="${data.image}" class="max-h-40 rounded-xl border border-white/20">`;
+            imgOut.innerHTML = `<img src="${data.image}" class="max-h-32 rounded-xl border border-white/20">`;
             imgOut.classList.remove("hidden");
             responseText = "Floof! 🦊";
         } 
@@ -103,7 +112,7 @@ window.runFunAPI = async (type) => {
         else if (type === 'yesno') {
             const res = await fetch("https://yesno.wtf/api");
             const data = await res.json();
-            imgOut.innerHTML = `<img src="${data.image}" class="max-h-40 rounded-xl border border-white/20">`;
+            imgOut.innerHTML = `<img src="${data.image}" class="max-h-32 rounded-xl border border-white/20">`;
             imgOut.classList.remove("hidden");
             responseText = `Answer: ${data.answer.toUpperCase()}`;
         } 
@@ -130,7 +139,7 @@ window.runFunAPI = async (type) => {
         
         out.innerText = responseText;
     } catch(e) { 
-        out.innerText = "Oops! The API might be sleeping right now. Try again! 😴"; 
+        out.innerText = "Oops! The API might be sleeping right now. 😴"; 
     }
 };
-                 
+            
