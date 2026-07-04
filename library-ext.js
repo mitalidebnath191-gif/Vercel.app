@@ -1,33 +1,86 @@
-window.searchAdditionalLibraries = async (query) => {
-    if (!query) return;
+// Gutendex Button যোগ করা
+function addExtraLibraryButtons() {
+    const libContent = document.querySelector('.overflow-x-auto');
 
-    // নতুন রেজাল্ট এরিয়া যোগ করার জন্য কিছু HTML এলিমেন্ট তৈরি করা
-    const container = document.getElementById('main-content');
-    const extraArea = document.createElement('div');
-    extraArea.className = "mt-6 p-4 bg-zinc-900 rounded-2xl";
-    extraArea.innerHTML = `<h2 class="text-xl font-bold mb-4">Extended Library Results</h2><div id="extResults" class="grid grid-cols-2 gap-4"></div>`;
-    container.appendChild(extraArea);
-    const extResults = document.getElementById('extResults');
+    if (libContent && !document.getElementById('gutendexBtn')) {
 
-    // ১. Gutendex API (পাবলিক ডোমেইন বই)
-    fetch(`https://gutendex.com/books?search=${encodeURIComponent(query)}`)
-        .then(r => r.json()).then(d => {
-            extResults.innerHTML += `<div class="p-2"><h3 class="text-green-400">Gutendex (Books)</h3>${d.results.slice(0,3).map(b => `<p class="text-sm truncate">${b.title}</p>`).join('')}</div>`;
-        });
+        const newBtn = document.createElement('button');
+        newBtn.id = 'gutendexBtn';
+        newBtn.className =
+            'lib-tab-btn px-4 py-2 bg-zinc-900 border border-white/10 text-zinc-400 rounded-xl font-semibold text-sm';
 
-    // ২. Internet Archive API (ডকুমেন্ট সার্চ)
-    fetch(`https://archive.org/advancedsearch.php?q=title:${encodeURIComponent(query)}&output=json&rows=3`)
-        .then(r => r.json()).then(d => {
-            extResults.innerHTML += `<div class="p-2"><h3 class="text-blue-400">Internet Archive</h3>${d.response.docs.map(b => `<p class="text-sm truncate">${b.title}</p>`).join('')}</div>`;
-        });
+        newBtn.innerHTML = "📜 Gutendex";
 
-    // ৩. WorldCat Search (লাইব্রেরি লোকেশন)
-    // দ্রষ্টব্য: WorldCat-এর জন্য API Key প্রয়োজন। আপনি আপনার Key এখানে বসাতে পারেন।
-    const worldCatKey = "YOUR_API_KEY_HERE";
-    fetch(`https://www.worldcat.org/webservices/catalog/search/opensearch?q=${encodeURIComponent(query)}&wskey=${worldCatKey}`)
-        .then(r => r.text()).then(xml => {
-            extResults.innerHTML += `<div class="p-2"><h3 class="text-purple-400">WorldCat</h3><p class="text-sm">Check console for XML results.</p></div>`;
-            console.log("WorldCat Results:", xml);
-        });
-};
-      
+        newBtn.onclick = async () => {
+
+            try {
+
+                const res = await fetch("https://gutendex.com/books/");
+                const data = await res.json();
+
+                let html = "<h2>📚 Gutendex Books</h2>";
+
+                data.results.slice(0,20).forEach(book => {
+
+                    const author = book.authors.length
+                        ? book.authors[0].name
+                        : "Unknown";
+
+                    html += `
+                        <div style="
+                            margin:10px 0;
+                            padding:10px;
+                            border:1px solid #444;
+                            border-radius:10px;">
+                            
+                            <h3>${book.title}</h3>
+
+                            <p>✍️ ${author}</p>
+
+                            <a href="${book.formats["text/html"] ||
+                                       book.formats["application/epub+zip"] ||
+                                       book.formats["text/plain; charset=utf-8"] ||
+                                       "#"}"
+                               target="_blank">
+                               📖 Read Book
+                            </a>
+
+                        </div>
+                    `;
+                });
+
+                const win = window.open("", "_blank");
+                win.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Gutendex Library</title>
+                        <style>
+                            body{
+                                background:#111;
+                                color:#fff;
+                                font-family:sans-serif;
+                                padding:20px;
+                            }
+                            a{
+                                color:#00bfff;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${html}
+                    </body>
+                    </html>
+                `);
+
+            } catch (err) {
+                alert("API Error: " + err.message);
+            }
+
+        };
+
+        libContent.appendChild(newBtn);
+    }
+}
+
+setInterval(addExtraLibraryButtons, 1000);
