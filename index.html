@@ -15,10 +15,10 @@
         .ai-msg { background: #1e2937; color: #e2e8f0; align-self: flex-start; }
         .global-msg-me { background: #059669; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .global-msg-other { background: #27272a; color: #e2e8f0; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200 h-screen overflow-hidden">
-
     <div id="login-screen" class="flex items-center justify-center min-h-screen relative">
         <div class="w-full max-w-md mx-4 glass-dark border border-white/10 rounded-3xl p-8 shadow-2xl z-10">
             <div class="flex justify-center mb-6"><div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center"><i class="fa-solid fa-bolt text-3xl text-white"></i></div><span class="logo-font text-4xl font-semibold ml-3">NEXUS</span></div>
@@ -30,158 +30,24 @@
             </div>
         </div>
     </div>
-
     <div id="dashboard-screen" class="hidden flex flex-col h-screen">
         <nav class="h-14 bg-zinc-900 border-b border-white/10 px-6 flex items-center justify-between z-50">
             <div onclick="navigateTo('home')" class="flex items-center gap-x-2 cursor-pointer"><div class="w-8 h-8 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center"><i class="fa-solid fa-bolt text-sm"></i></div><span class="logo-font text-2xl font-semibold">NEXUS</span></div>
             <div class="flex items-center gap-x-3"><div class="text-right text-xs"><div>Alex Rivera</div><div class="text-emerald-400">Pro</div></div><div class="w-8 h-8 bg-orange-400 rounded-2xl flex items-center justify-center font-bold text-zinc-900">AR</div></div>
         </nav>
-        <div class="flex flex-1 overflow-hidden">
-            <div id="sidebar" class="w-64 bg-zinc-900 border-r border-white/10 p-4 overflow-y-auto hidden lg:block"></div>
-            <div id="main-content" class="flex-1 p-6 overflow-auto bg-zinc-950"></div>
-        </div>
+        <div class="flex flex-1 overflow-hidden"><div id="sidebar" class="w-64 bg-zinc-900 border-r border-white/10 p-4 overflow-y-auto hidden lg:block"></div><div id="main-content" class="flex-1 p-6 overflow-auto bg-zinc-950"></div></div>
     </div>
     <div id="toast" class="hidden fixed bottom-6 right-6 bg-zinc-800 border border-violet-400 text-white px-6 py-4 rounded-3xl z-50"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCUqYFyYMHQNT8-CdOfkdh2mMhv4bUNIh4", authDomain: "chatap-2ca07.firebaseapp.com",
-            databaseURL: "https://chatap-2ca07-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "chatap-2ca07",
-            storageBucket: "chatap-2ca07.firebasestorage.app", messagingSenderId: "46577729580", appId: "1:46577729580:web:bb7843488d7cd77c895189"
-        };
-        const app = initializeApp(firebaseConfig); const db = getDatabase(app); const messagesRef = ref(db, 'nexus_global_chat');
-        let isListening = false; const myUsername = "User_" + Math.floor(Math.random() * 10000);
-
-        window.sendGlobalChatMessage = async () => {
-            const input = document.getElementById("globalUserInput"); const text = input.value.trim(); if (!text) return; input.value = "";
-            try { await push(messagesRef, { name: myUsername, text: text, timestamp: Date.now() }); } catch (e) { alert("Permission Denied! Live Database Rules true korun."); }
-        };
-        window.startGlobalChatListener = () => {
-            if (isListening) return; isListening = true;
-            onChildAdded(messagesRef, (snap) => {
-                const data = snap.val(); const chatBox = document.getElementById("globalChatBox");
-                if (chatBox) {
-                    const isMe = data.name === myUsername;
-                    chatBox.innerHTML += `<div class="chat-message ${isMe?'global-msg-me':'global-msg-other'} max-w-md"><span class="text-[10px] opacity-70 mb-1 uppercase">${isMe?'You':data.name}</span><span class="text-sm">${data.text}</span></div>`;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-            });
-        };
+        const app = initializeApp({ apiKey: "AIzaSyCUqYFyYMHQNT8-CdOfkdh2mMhv4bUNIh4", authDomain: "chatap-2ca07.firebaseapp.com", databaseURL: "https://chatap-2ca07-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "chatap-2ca07", storageBucket: "chatap-2ca07.firebasestorage.app", messagingSenderId: "46577729580", appId: "1:46577729580:web:bb7843488d7cd77c895189" }); 
+        const db = getDatabase(app); const messagesRef = ref(db, 'nexus_global_chat'); let isListening = false; const myUsername = "User_" + Math.floor(Math.random() * 10000);
+        window.sendGlobalChatMessage = async () => { const input = document.getElementById("globalUserInput"); const text = input.value.trim(); if (!text) return; input.value = ""; try { await push(messagesRef, { name: myUsername, text: text, timestamp: Date.now() }); } catch (e) { alert("Permission Denied!"); } };
+        window.startGlobalChatListener = () => { if (isListening) return; isListening = true; onChildAdded(messagesRef, (snap) => { const data = snap.val(); const chatBox = document.getElementById("globalChatBox"); if (chatBox) { const isMe = data.name === myUsername; chatBox.innerHTML += `<div class="chat-message ${isMe?'global-msg-me':'global-msg-other'} max-w-md"><span class="text-[10px] opacity-70 mb-1 uppercase">${isMe?'You':data.name}</span><span class="text-sm">${data.text}</span></div>`; chatBox.scrollTop = chatBox.scrollHeight; } }); };
     </script>
-
-    <script>
-        const API_URL = "/api/chat"; 
-        let pyodide = null;
-
-        const tools = [
-            { id: 'chat', name: 'AI Chat', icon: 'fa-comments', emoji: '🧠', color: 'violet', load: () => loadFeature(`<div class="max-w-2xl mx-auto h-full flex flex-col"><h1 class="text-2xl font-semibold mb-4">🧠 AI Chat</h1><div id="chatBox" class="flex-1 bg-zinc-900 rounded-2xl p-4 overflow-y-auto flex flex-col gap-2 mb-4"></div><div class="flex gap-2"><input id="userInput" type="text" placeholder="Ask AI..." class="flex-1 bg-zinc-800 rounded-xl px-4 py-3"><button onclick="sendChatMessage()" class="px-6 bg-violet-600 rounded-xl font-semibold">Send</button></div></div>`, () => document.getElementById("chatBox").innerHTML = `<div class="ai-msg chat-message">Hello! Ami apnar AI Assistant.</div>`) },
-            { id: 'globalchat', name: 'Global Chat', icon: 'fa-globe', emoji: '🌍', color: 'emerald', load: () => loadFeature(`<div class="max-w-2xl mx-auto h-full flex flex-col"><h1 class="text-2xl font-semibold mb-4 text-emerald-400">🌍 Global Live Chat</h1><div id="globalChatBox" class="flex-1 bg-zinc-900 rounded-2xl p-4 overflow-y-auto flex flex-col gap-2 mb-4"></div><div class="flex gap-2"><input id="globalUserInput" type="text" placeholder="Type live message..." class="flex-1 bg-zinc-800 rounded-xl px-4 py-3" onkeypress="if(event.key==='Enter') sendGlobalChatMessage()"><button onclick="sendGlobalChatMessage()" class="px-6 bg-emerald-600 rounded-xl font-semibold">Send</button></div></div>`, () => window.startGlobalChatListener ? window.startGlobalChatListener() : null) },
-            { id: 'image', name: 'Image Studio', icon: 'fa-image', emoji: '🎨', color: 'fuchsia', load: () => loadFeature(`<div class="max-w-xl mx-auto"><h1 class="text-2xl font-semibold mb-4">🎨 Image Generator</h1><div class="flex gap-2"><input id="imagePrompt" type="text" value="Futuristic city" class="flex-1 bg-zinc-800 rounded-xl px-4 py-3"><button onclick="generateImage()" class="px-6 bg-fuchsia-600 rounded-xl font-semibold">Generate</button></div><div id="imageResult" class="mt-6 min-h-[300px] bg-zinc-900 rounded-2xl flex items-center justify-center overflow-hidden border border-white/5"></div></div>`) },
-            { id: 'python', name: 'Python Lab', icon: 'fa-python', emoji: '🐍', color: 'amber', load: () => loadFeature(`<div class="max-w-2xl mx-auto"><h1 class="text-2xl font-semibold mb-4">🐍 Python Lab</h1><textarea id="pythonCode" class="w-full h-48 bg-zinc-900 rounded-2xl p-4 font-mono text-sm">print("Hello NEXUS Python")</textarea><button onclick="runPythonCode()" class="mt-3 px-6 py-2 bg-emerald-600 rounded-xl">Run Code</button><pre id="pythonOutput" class="mt-4 w-full h-32 bg-black rounded-xl p-4 font-mono text-xs text-emerald-300 overflow-auto"></pre></div>`) },
-            { id: 'terminal', name: 'Code Lab', icon: 'fa-terminal', emoji: '💻', color: 'cyan', load: () => loadFeature(`<div class="max-w-4xl mx-auto"><h1 class="text-2xl font-semibold mb-4">💻 Code Lab</h1><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><textarea id="codeInput" class="h-48 bg-zinc-900 rounded-2xl p-4 font-mono text-sm">&lt;h1 style="color:#10b981;text-align:center;"&gt;NEXUS Web&lt;/h1&gt;</textarea><iframe id="previewFrame" class="h-48 bg-white rounded-2xl w-full"></iframe></div><button onclick="runCode()" class="mt-3 px-6 py-2 bg-emerald-600 rounded-xl">Run HTML</button></div>`) },
-            { id: 'weather', name: 'Live Weather', icon: 'fa-cloud-sun', emoji: '⛅', color: 'sky', load: () => loadFeature(`<div class="max-w-md mx-auto"><h1 class="text-2xl font-semibold mb-4 text-sky-400">⛅ Live Weather</h1><div class="flex gap-2 mb-4"><input id="cityInput" type="text" placeholder="যেমন: Bardhaman" class="flex-1 bg-zinc-800 rounded-xl px-4 py-3" onkeypress="if(event.key==='Enter') getWeather()"><button onclick="getWeather()" class="px-6 bg-sky-600 rounded-xl font-semibold">Search</button></div><div id="weatherResult" class="bg-zinc-900 rounded-2xl p-6 text-center border border-white/5 hidden"></div></div>`) },
-            
-            // আপডেট করা Browser ফিচার - Open in New Tab বাটন সহ
-            { id: 'browser', name: 'Web Browser', icon: 'fa-compass', emoji: '🌐', color: 'blue', load: () => loadFeature(`<div class="max-w-4xl mx-auto flex flex-col h-full min-h-[500px]"><div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-semibold text-blue-400">🌐 Web Browser</h1><a id="extLink" href="#" target="_blank" class="hidden text-sm bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center gap-2"><i class="fa-solid fa-external-link-alt"></i> Open in New Tab</a></div><div class="flex gap-2 mb-4"><input id="browserInput" type="text" placeholder="সার্চ করুন বা ওয়েবসাইটের লিঙ্ক দিন..." class="flex-1 bg-zinc-800 rounded-xl px-4 py-3" onkeypress="if(event.key==='Enter') loadBrowser()"><button onclick="loadBrowser()" class="px-6 bg-blue-600 rounded-xl font-semibold">Search</button></div><div id="browserWrapper" class="flex-1 w-full bg-white rounded-2xl overflow-hidden hidden border border-white/10"><iframe id="browserFrame" class="w-full h-full min-h-[500px] border-0"></iframe></div></div>`) }
-        ];
-
-        function showToast(msg) { const t = document.getElementById("toast"); t.innerText = msg; t.classList.remove("hidden"); setTimeout(() => t.classList.add("hidden"), 2000); }
-        function loadFeature(html, cb) { document.getElementById("main-content").innerHTML = html; if(cb) cb(); }
-
-        // Core Functions
-        async function sendChatMessage() {
-            const input = document.getElementById("userInput"); const chatBox = document.getElementById("chatBox"); const text = input.value.trim(); if (!text) return;
-            chatBox.innerHTML += `<div class="user-msg chat-message"><span class="text-sm">${text}</span></div>`; input.value = ""; chatBox.scrollTop = chatBox.scrollHeight;
-            const id = 'th-' + Date.now(); chatBox.innerHTML += `<div id="${id}" class="ai-msg chat-message">Thinking...</div>`;
-            try {
-                const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text }) });
-                const data = await res.json(); document.getElementById(id).remove();
-                chatBox.innerHTML += `<div class="ai-msg chat-message"><span class="text-sm">${data.reply || "No reply."}</span></div>`;
-            } catch (e) { document.getElementById(id).innerText = "Error connecting."; }
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function generateImage() {
-            let prompt = document.getElementById("imagePrompt").value.trim(); const safe = encodeURIComponent(prompt);
-            const url = `https://image.pollinations.ai/prompt/${safe}?width=1024&height=1024&nologo=true&seed=${Date.now()}`;
-            const div = document.getElementById("imageResult"); div.innerHTML = `<div class="animate-spin w-8 h-8 border-2 border-fuchsia-500 border-t-transparent rounded-full"></div>`;
-            const img = new Image(); img.onload = () => div.innerHTML = `<img src="${url}" class="max-h-[350px] object-cover rounded-xl">`;
-            img.onerror = () => div.innerHTML = `<div class="text-red-400 text-sm p-4">Server Error. Try shorter prompt.</div>`; img.src = url;
-        }
-
-        async function runPythonCode() {
-            const output = document.getElementById("pythonOutput"); output.textContent = "Running...\n";
-            try { if (!pyodide) { showToast("Loading Python..."); pyodide = await loadPyodide(); } const result = await pyodide.runPythonAsync(document.getElementById("pythonCode").value); output.textContent += result || "Executed successfully."; } catch (err) { output.textContent += "Error: " + err.message; }
-        }
-
-        function runCode() { const doc = document.getElementById("previewFrame").contentWindow.document; doc.open(); doc.write(document.getElementById("codeInput").value); doc.close(); }
-
-        // Weather Function
-        async function getWeather() {
-            const cityInput = document.getElementById("cityInput");
-            if (!cityInput) return;
-            const city = cityInput.value.trim() || "Bardhaman"; 
-            const resultDiv = document.getElementById("weatherResult");
-            resultDiv.classList.remove("hidden");
-            resultDiv.innerHTML = `<div class="animate-spin w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full mx-auto"></div>`;
-            try {
-                const res = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
-                if(!res.ok) throw new Error("Not found");
-                const data = await res.json();
-                const current = data.current_condition[0];
-                resultDiv.innerHTML = `
-                    <div class="text-5xl font-bold mb-3 text-white">${current.temp_C}°C</div>
-                    <div class="text-zinc-300 text-xl capitalize mb-2">${current.weatherDesc[0].value}</div>
-                    <div class="text-sm text-zinc-400">Feels like: ${current.FeelsLikeC}°C | Humidity: ${current.humidity}%</div>
-                    <div class="text-sm text-sky-400 mt-3 font-semibold"><i class="fa-solid fa-location-dot"></i> ${city.toUpperCase()}</div>
-                `;
-            } catch(e) {
-                resultDiv.innerHTML = `<div class="text-red-400 py-2">"${city}" নামের জায়গাটি পাওয়া যায়নি। দয়া করে সঠিক বানান লিখুন।</div>`;
-            }
-        }
-
-        // Browser Function Update
-        function loadBrowser() {
-            const input = document.getElementById("browserInput").value.trim();
-            if (!input) return;
-            const wrapper = document.getElementById("browserWrapper");
-            const frame = document.getElementById("browserFrame");
-            const extLink = document.getElementById("extLink");
-            
-            wrapper.classList.remove("hidden");
-            
-            let url = input;
-            if (!/^https?:\/\//i.test(url)) {
-                if (url.includes('.') && !url.includes(' ')) {
-                    url = 'https://' + url;
-                } else {
-                    url = `https://www.bing.com/search?q=${encodeURIComponent(input)}&igu=1`;
-                }
-            }
-            
-            frame.src = url;
-            
-            // নতুন ট্যাবে খোলার লিংক সেট করা হচ্ছে
-            extLink.href = url;
-            extLink.classList.remove("hidden");
-        }
-
-        // Navigation Setup
-        function navigateTo(page) {
-            if (page === 'home') {
-                document.getElementById("main-content").innerHTML = `<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6" id="feature-grid"></div>`;
-                document.getElementById("feature-grid").innerHTML = tools.map(t => `<div onclick="navigateTo('${t.id}')" class="glass-dark p-4 rounded-2xl cursor-pointer border border-transparent hover:border-${t.color}-500/30"><div class="text-3xl mb-2">${t.emoji}</div><div class="font-medium text-sm ${t.id==='globalchat'?'text-emerald-400':''}">${t.name}</div></div>`).join('');
-            } else { const tool = tools.find(t => t.id === page); if(tool) tool.load(); }
-        }
-
-        function handleLogin() {
-            document.getElementById("login-screen").classList.add("hidden"); document.getElementById("dashboard-screen").classList.remove("hidden");
-            document.getElementById("sidebar").innerHTML = `<div class="text-xs text-zinc-500 mb-4 px-2 tracking-widest uppercase">Tools</div>` + tools.map(t => `<div onclick="navigateTo('${t.id}')" class="flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-xl cursor-pointer text-sm mb-1 ${t.id==='globalchat'?'text-emerald-400':''}"><i class="fa-solid ${t.icon} w-4"></i><span>${t.name}</span></div>`).join('');
-            navigateTo('home');
-        }
-    </script>
+    <script src="index.js"></script>
 </body>
-</html>
+</html>                                                                                                                                                      </html>
+                                                                                                                                                         
