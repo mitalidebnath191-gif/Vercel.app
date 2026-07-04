@@ -1,93 +1,104 @@
-// Image Studio-এর ইনপুট বক্সকে স্মার্ট করার লজিক (Slash Command: /card)
-const hookImageStudio = setInterval(() => {
-    // Image Studio পেজটি খুঁজছে
-    const studioTitle = Array.from(document.querySelectorAll('h1, h2, div')).find(el => 
-        el.innerText && (el.innerText.includes('Image Studio') || el.innerText.includes('Image Generator'))
+// Image Generator-এর ইনপুট বক্সকে স্মার্ট করার লজিক (/card কমান্ড)
+const hookImageGenerator = setInterval(() => {
+    // "Image Generator" পেজে আছেন কিনা তা নিশ্চিত হওয়া
+    const isGeneratorPage = Array.from(document.querySelectorAll('h1, h2, h3, div')).some(el =>
+        el.innerText && el.innerText.includes('Image Generator')
     );
-    
-    if (studioTitle) {
-        const container = studioTitle.parentElement;
+
+    if (isGeneratorPage) {
+        // ইনপুট বক্সটি খুঁজছে (যেখানে Futuristic city লেখা থাকে)
+        const inputField = document.querySelector('input[type="text"], input[placeholder*="Futuristic"]');
         
-        // সার্চ বক্স এবং বাটন খুঁজছে
-        const inputField = container.querySelector('input[type="text"], textarea');
-        const generateBtn = container.querySelector('button');
+        // জেনারেট বাটনটি খুঁজছে
+        const generateBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.innerText.includes('Gene')); 
 
-        // যদি বক্স ও বাটন পাওয়া যায় এবং আগে থেকে হুক করা না থাকে
         if (inputField && generateBtn && !inputField.dataset.cardHooked) {
-            inputField.dataset.cardHooked = "true"; // ট্যাগ করে দিলাম যাতে বারবার রান না হয়
+            inputField.dataset.cardHooked = "true"; // একবারই রান করার জন্য ট্যাগ
 
-            // আমাদের কাস্টম আউটপুট দেখানোর জন্য একটি জায়গা তৈরি করছি
+            // আউটপুট দেখানোর জন্য একটি কাস্টম জায়গা (ইনপুটের ঠিক নিচে তৈরি হবে)
             const customOutput = document.createElement('div');
             customOutput.id = "custom-card-output";
-            customOutput.className = "mt-4 text-center w-full flex flex-col items-center";
-            // বাটনের ঠিক নিচেই এটি বসিয়ে দিচ্ছি
-            generateBtn.parentElement.parentElement.appendChild(customOutput);
+            customOutput.style.cssText = "margin-top: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50;";
 
-            // আগের অরিজিনাল ফাংশনটি সেভ করে রাখছি
-            const originalOnClick = generateBtn.onclick;
+            // ইনপুট এবং বাটনের মেইন কন্টেনারের ঠিক নিচে আমাদের আউটপুট বক্স বসিয়ে দিচ্ছি
+            const inputContainer = inputField.parentElement;
+            inputContainer.parentElement.insertBefore(customOutput, inputContainer.nextSibling);
 
-            // বাটনে নতুন লজিক বসাচ্ছি
-            generateBtn.onclick = (e) => {
-                const text = inputField.value.trim();
-                
-                // যদি ইনপুট "/card " দিয়ে শুরু হয়
-                if (text.toLowerCase().startsWith('/card ')) {
-                    if (e) e.preventDefault(); // আগের কাজ বন্ধ করবে
-                    
-                    const name = text.substring(6).trim(); // "/card " অংশটুকু বাদ দিয়ে শুধু নামটা নেবে
-                    
-                    if(!name) {
-                        alert("Please type a name! Example: /card Rahul");
-                        return;
-                    }
+            // ১. বাটনে ক্লিকের উপর কড়া নজরদারি (Capture Phase)
+            window.addEventListener('click', (e) => {
+                const checkPage = Array.from(document.querySelectorAll('h1, h2, h3, div')).some(el => el.innerText && el.innerText.includes('Image Generator'));
+                if (!checkPage) return;
 
-                    // লোডিং অ্যানিমেশন
-                    customOutput.innerHTML = `<div class="text-pink-400 text-sm font-semibold animate-pulse mt-4">✨ Designing your name card... Please wait...</div>`;
-                    
-                    // 3D Name Art প্রম্পট
-                    const promptText = `Beautiful 3D glowing neon typography of the name "${name}", stunning digital art, vibrant colors, dark background, 8k resolution, highly detailed, masterpiece`;
-                    const prompt = encodeURIComponent(promptText);
-                    const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=512&height=512&nologo=true`;
-                    
-                    const img = new Image();
-                    img.src = imageUrl;
-                    img.className = "max-w-full max-h-[300px] rounded-lg shadow-xl border border-pink-500/50 object-contain mt-4";
-                    
-                    // ইমেজ লোড হলে দেখাবে
-                    img.onload = () => {
-                        customOutput.innerHTML = '';
-                        customOutput.appendChild(img);
-                        
-                        const actionDiv = document.createElement('div');
-                        actionDiv.className = "mt-3";
-                        actionDiv.innerHTML = `<a href="${imageUrl}" target="_blank" class="inline-block bg-zinc-800 text-white text-xs px-4 py-2 rounded-lg border border-zinc-700 hover:bg-pink-600 transition">⬇️ Open / Download HD Image</a>`;
-                        customOutput.appendChild(actionDiv);
-                    };
-                    
-                    img.onerror = () => {
-                        customOutput.innerHTML = '<span class="text-red-400 text-sm">Failed to generate image. Try again.</span>';
-                    };
-
-                } else {
-                    // যদি /card না থাকে, তবে আগের অরিজিনাল ইমেজ জেনারেটর কাজ করবে
-                    customOutput.innerHTML = ''; // আমাদের কাস্টম বক্স ক্লিয়ার করে দেবে
-                    if (typeof originalOnClick === 'function') {
-                        originalOnClick.apply(generateBtn, arguments);
-                    }
-                }
-            };
-
-            // কীবোর্ডের "Enter" বাটন চাপলেও যেন কাজ করে
-            inputField.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+                const clickedBtn = e.target.closest('button');
+                // যদি ক্লিক করা বাটনটি "Generate" হয়
+                if (clickedBtn && clickedBtn.innerText.includes('Gene')) { 
                     const text = inputField.value.trim();
+
                     if (text.toLowerCase().startsWith('/card ')) {
                         e.preventDefault();
-                        generateBtn.click(); // আমাদের নতুন লজিককে কল করবে
+                        e.stopPropagation(); // আসল অ্যাপের কাজ জোর করে থামিয়ে দেবে
+
+                        const name = text.substring(6).trim();
+                        generateNameArtCard(name, customOutput);
+                    } else {
+                        customOutput.innerHTML = ''; // অন্য কিছু লিখলে আমাদের বক্স ক্লিয়ার থাকবে
                     }
                 }
-            });
+            }, true); // true = Capture Phase (সবার আগে কাজ করবে)
+
+            // ২. কীবোর্ডের Enter বাটনের উপর নজরদারি (Capture Phase)
+            inputField.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const text = inputField.value.trim();
+
+                    if (text.toLowerCase().startsWith('/card ')) {
+                        e.preventDefault();
+                        e.stopPropagation(); // আসল অ্যাপের কাজ থামিয়ে দেবে
+
+                        const name = text.substring(6).trim();
+                        generateNameArtCard(name, customOutput);
+                    } else {
+                        customOutput.innerHTML = '';
+                    }
+                }
+            }, true);
         }
     }
 }, 1000);
-              
+
+// ইমেজ তৈরি করার ফাংশন
+function generateNameArtCard(name, outputDiv) {
+    if(!name) {
+        alert("Please type a name! Example: /card Rahul");
+        return;
+    }
+
+    // লোডিং ডিজাইন (আপনার অ্যাপের ডার্ক থিমের সাথে মিলিয়ে)
+    outputDiv.innerHTML = `<div style="color:#d946ef; font-size:16px; font-weight:bold; padding:20px; text-align:center; animation: pulse 2s infinite;">✨ Designing 3D Art for "${name}"... Please wait...</div>`;
+
+    // 3D Name Art প্রম্পট
+    const promptText = `Beautiful 3D glowing neon typography of the name "${name}", stunning digital art, vibrant colors, dark background, 8k resolution, highly detailed, masterpiece`;
+    const prompt = encodeURIComponent(promptText);
+    const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=512&height=512&nologo=true`;
+
+    const img = new Image();
+    img.src = imageUrl;
+    img.style.cssText = "max-width: 100%; max-height: 320px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 2px solid #d946ef; margin-top: 10px; object-fit: contain; background: #111;";
+
+    // ইমেজ লোড হলে দেখাবে
+    img.onload = () => {
+        outputDiv.innerHTML = '';
+        outputDiv.appendChild(img);
+
+        // সুন্দর একটি ডাউনলোড বাটন
+        const actionDiv = document.createElement('div');
+        actionDiv.style.marginTop = "15px";
+        actionDiv.innerHTML = `<a href="${imageUrl}" target="_blank" style="display:inline-block; background:#d946ef; color:white; font-size:14px; font-weight:bold; padding:10px 20px; border-radius:10px; text-decoration:none; box-shadow: 0 4px 10px rgba(217, 70, 239, 0.4);">⬇️ Download HD Image</a>`;
+        outputDiv.appendChild(actionDiv);
+    };
+
+    img.onerror = () => {
+        outputDiv.innerHTML = '<span style="color:#ef4444; font-size:14px;">Failed to generate image. Try again.</span>';
+    };
+                            }
+            
