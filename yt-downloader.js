@@ -1,4 +1,4 @@
-// NEXUS YT Downloader (Fixed Blocked Response - Direct Tab Method)
+// NEXUS YT Downloader (Direct Redirect to ytdown.to)
 (function() {
     // ১. ফ্লোটিং বাটন তৈরি করা
     const createFloatingBtn = () => {
@@ -7,18 +7,16 @@
             fab.id = 'nexus-yt-fab';
             fab.innerHTML = '⬇️';
             fab.style.cssText = "position: fixed; bottom: 150px; right: 20px; background: #ef4444; color: white; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); z-index: 999998; transition: 0.3s;";
-            
             fab.onclick = () => openYtModal();
             document.body.appendChild(fab);
         }
     };
 
-    // ২. শুধু Web Browser পেজ চেক করা
+    // ২. শুধু Web Browser পেজে বাটন দেখানো
     setInterval(() => {
         const isWebBrowserPage = Array.from(document.querySelectorAll('div, h1, h2')).some(el => 
             el.innerText && el.innerText.trim() === 'Web Browser'
         );
-
         const fab = document.getElementById('nexus-yt-fab');
         if (isWebBrowserPage) {
             if (!fab) createFloatingBtn();
@@ -27,7 +25,7 @@
         }
     }, 1000);
 
-    // ৩. পপ-আপ ডিজাইন ও রিডাইরেক্ট লজিক
+    // ৩. পপ-আপ ডিজাইন ও সরাসরি রিডাইরেক্ট
     function openYtModal() {
         let modal = document.getElementById('yt-modal');
         if (modal) modal.remove();
@@ -39,36 +37,25 @@
         modal.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <h2 style="color:#ef4444; font-size:18px; margin:0;">📺 YT Downloader</h2>
-                <button id="close-yt" style="background:#3f3f46; color:white; border:none; padding:5px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">X</button>
+                <button id="close-yt" style="background:#3f3f46; color:white; border:none; padding:5px 12px; border-radius:8px; cursor:pointer;">X</button>
             </div>
-            
             <input type="text" id="yt-link" placeholder="Paste YouTube link here..." style="width:100%; background:#27272a; border:1px solid #52525b; color:white; padding:15px; border-radius:8px; outline:none; box-sizing:border-box; margin-bottom:15px;">
-            <button id="direct-download-btn" style="background:#ef4444; color:white; padding:15px; border-radius:8px; border:none; font-weight:bold; cursor:pointer; width:100%; font-size:15px;">⬇️ DOWNLOAD VIDEO</button>
-            
-            <div style="color:#a1a1aa; font-size:11px; text-align:center; margin-top:12px;">
-                Opens securely in a new fast downloader tab.
-            </div>
+            <button id="go-download-btn" style="background:#ef4444; color:white; padding:15px; border-radius:8px; border:none; font-weight:bold; cursor:pointer; width:100%;">🚀 GO TO DOWNLOADER</button>
         `;
         document.body.appendChild(modal);
 
-        // Close বাটন লজিক
         document.getElementById('close-yt').onclick = () => modal.remove();
 
-        // Download বাটন লজিক (No iFrame, Direct Safe Redirect)
-        document.getElementById('direct-download-btn').onclick = () => {
+        document.getElementById('go-download-btn').onclick = () => {
             const url = document.getElementById('yt-link').value.trim();
             if(!url.includes('youtu')) { alert("Please enter a valid YouTube link!"); return; }
             
             // হিস্ট্রিতে সেভ করা
-            if(window.addNexusHistory) window.addNexusHistory("Downloaded: " + url, "📺 YT Downloader");
+            if(window.addNexusHistory) window.addNexusHistory("Redirected to Downloader: " + url, "📺 YT Downloader");
             
-            // নির্ভরযোগ্য YT1s সার্ভার ব্যবহার করা হলো যা iFrame ব্লক করে না, সরাসরি ফুল পেজে কাজ করে
-            const downloadUrl = `https://yt1s.com/en/youtube-to-mp4?q=${encodeURIComponent(url)}`;
-            window.open(downloadUrl, '_blank');
-            
-            // পপ-আপ বন্ধ করে দেওয়া
+            // সরাসরি আপনার দেওয়া লিঙ্কটিতে রিডাইরেক্ট করা
+            window.open(`https://app.ytdown.to/en35/?url=${encodeURIComponent(url)}`, '_blank');
             modal.remove();
         };
     }
 })();
-            
