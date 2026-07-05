@@ -1,4 +1,4 @@
-// NEXUS Truecaller OS Engine (Smart Parsing & Error Handling)
+// NEXUS Viewcaller OS Engine (New API Integrated)
 (function() {
     const initTruecallerBtn = setInterval(() => {
         if (!document.getElementById('nexus-truecaller-fab')) {
@@ -15,6 +15,7 @@
         }
     }, 1000);
 
+    // মেইন স্ক্রিন চেক লজিক
     setInterval(() => {
         const fab = document.getElementById('nexus-truecaller-fab');
         if (fab) {
@@ -36,7 +37,7 @@
 
         modal.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #3f3f46; padding-bottom: 10px;">
-                <h2 style="color:#3b82f6; font-weight:bold; font-size:18px; margin:0;">📞 Truecaller Search</h2>
+                <h2 style="color:#3b82f6; font-weight:bold; font-size:18px; margin:0;">📞 Caller ID Search</h2>
                 <button id="close-tc-btn" style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">X</button>
             </div>
             
@@ -53,73 +54,56 @@
             const numInput = document.getElementById('tc-number-input').value.trim();
             const resDiv = document.getElementById('tc-result');
             
-            if (!numInput || numInput.length < 10) {
+            // নম্বর অবশ্যই ১০ ডিজিটের হতে হবে
+            if (!numInput || numInput.length !== 10) {
                 alert("Please enter a valid 10-digit mobile number!");
                 return;
             }
 
-            const formattedNumber = numInput.length === 10 ? "91" + numInput : numInput;
             resDiv.style.display = 'flex';
-            resDiv.innerHTML = `<span style="color:#38bdf8; font-size:13px; text-align:center; animation: pulse 1.5s infinite;">⏳ Searching Database...</span>`;
+            resDiv.innerHTML = `<span style="color:#38bdf8; font-size:13px; text-align:center; animation: pulse 1.5s infinite;">⏳ Searching Viewcaller Database...</span>`;
 
             try {
-                const response = await fetch(`https://truecaller-data2.p.rapidapi.com/search/${formattedNumber}`, {
+                // আপনার দেওয়া Viewcaller API ব্যবহার করা হচ্ছে
+                const response = await fetch(`https://viewcaller.p.rapidapi.com/api/v1/search?code=91&number=${numInput}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-rapidapi-host': 'truecaller-data2.p.rapidapi.com',
+                        'x-rapidapi-host': 'viewcaller.p.rapidapi.com',
                         'x-rapidapi-key': 'bae47b7f91msh5916b9a175c7aeap1387ddjsncec825a93b2a'
                     }
                 });
                 
                 const data = await response.json();
+                if(window.addNexusHistory) window.addNexusHistory(`Searched: +91${numInput}`, "📞 Caller ID");
                 
-                // ১. যদি API থেকে Error মেসেজ আসে (যেমন: Quota Exceeded)
-                if (data.message) {
-                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API Error: ${data.message}</span>`;
+                // যদি এই API-তেও লিমিট এরর আসে
+                if (data.message && data.message.toLowerCase().includes("exceeded")) {
+                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API Quota Exceeded. Please use a new API Key.</span>`;
                     return;
                 }
 
-                // ২. বিভিন্ন ধরনের Data Structure ধরার লজিক
-                let person = null;
-                if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
-                    person = data.data[0];
-                } else if (Array.isArray(data) && data.length > 0) {
-                    person = data[0];
-                } else if (data && data.name) {
-                    person = data;
-                }
+                // Viewcaller-এর ডেটা বের করার ডাইনামিক লজিক
+                let name = "Unknown Name";
+                
+                // API-এর ডেটা যেখানেই থাকুক, খুঁজে বের করার চেষ্টা করবে
+                if (data.name) name = data.name;
+                else if (data.data && data.data.name) name = data.data.name;
+                else if (data.result && data.result.name) name = data.result.name;
 
-                if (person && person.name) {
-                    const name = person.name || "Unknown Name";
-                    const carrier = (person.phones && person.phones[0] && person.phones[0].carrier) ? person.phones[0].carrier : "N/A";
-                    const email = (person.internetAddresses && person.internetAddresses[0]) ? person.internetAddresses[0].id : "No Email Found";
-                    const city = (person.addresses && person.addresses[0]) ? person.addresses[0].city : "Unknown Location";
-
+                if (name !== "Unknown Name" || Object.keys(data).length > 0) {
                     resDiv.innerHTML = `
                         <h3 style="color:#4ade80; margin:0 0 10px 0; font-size:15px; text-align:center; border-bottom: 1px dashed #3f3f46; padding-bottom: 5px;">✅ Verified Identity</h3>
                         <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
                             <span style="color:#a1a1aa; font-size:13px;">Name:</span>
                             <span style="color:white; font-size:13px; font-weight:bold;">${name}</span>
                         </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                            <span style="color:#a1a1aa; font-size:13px;">Carrier:</span>
-                            <span style="color:white; font-size:13px; font-weight:bold;">${carrier}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                            <span style="color:#a1a1aa; font-size:13px;">Location:</span>
-                            <span style="color:white; font-size:13px; font-weight:bold;">${city}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between;">
-                            <span style="color:#a1a1aa; font-size:13px;">Email:</span>
-                            <span style="color:#38bdf8; font-size:12px; max-width:60%; word-break:break-all; text-align:right;">${email}</span>
+                        <div style="margin-top:10px; font-size:11px; color:#a1a1aa; word-break:break-all; background:#27272a; padding:8px; border-radius:5px; max-height:80px; overflow-y:auto;">
+                            <span style="color:#38bdf8;">Raw Data:</span> ${JSON.stringify(data)}
                         </div>
                     `;
                 } else {
-                    resDiv.innerHTML = `
-                        <span style="color:#ef4444; font-size:13px; text-align:center; margin-bottom:10px;">❌ No details found.</span>
-                        <div style="font-size:10px; color:#a1a1aa; word-break:break-all; background:#27272a; padding:5px; border-radius:5px;">Raw Response: ${JSON.stringify(data).substring(0, 100)}...</div>
-                    `;
+                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ No details found for this number.</span>`;
                 }
             } catch (err) {
                 resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">⚠️ Network Issue or API Blocked!</span>`;
@@ -127,4 +111,4 @@
         };
     }
 })();
-                    
+            
