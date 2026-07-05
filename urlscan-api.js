@@ -1,4 +1,15 @@
-// URL Scanner-এর জন্য urlscan.io API (CORS Bypass & Clone Method)
+// ==UserScript==
+// @name         URL Scanner API Fixer
+// @namespace    http://tampermonkey.net
+// @version      1.1
+// @description  Fixes CORS issue using GM_xmlhttpRequest
+// @match        *://*/*
+// @grant        GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
+// ==UserScript==
+
+// URL Scanner-এর জন্য urlscan.io API
 const API_KEY = "019f2fb8-cb80-763b-a7bd-978c8d456002";
 
 const hookUrlScanApi = setInterval(() => {
@@ -24,7 +35,7 @@ const hookUrlScanApi = setInterval(() => {
         // যদি বাটন পাওয়া যায় এবং আগে থেকে হুক না করা থাকে
         if (urlInput && originalScanBtn && !originalScanBtn.dataset.urlscanHooked) {
             
-            // মাস্টার ট্রিক: বাটনটিকে ক্লোন করে রিপ্লেস করে দিচ্ছি, যাতে অরিজিনাল অ্যাপের ইভেন্ট ডিলিট হয়ে যায়!
+            // মাস্টার ট্রিক: বাটনটিকে ক্লোন করে রিপ্লেস করে দিচ্ছি
             const scanBtn = originalScanBtn.cloneNode(true);
             scanBtn.dataset.urlscanHooked = "true";
             originalScanBtn.parentNode.replaceChild(scanBtn, originalScanBtn);
@@ -36,7 +47,7 @@ const hookUrlScanApi = setInterval(() => {
             scanBtn.parentElement.parentElement.appendChild(outputDiv);
 
             // নতুন বাটনে আমাদের ইভেন্ট
-            scanBtn.addEventListener('click', async (e) => {
+            scanBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 
                 const urlToScan = urlInput.value.trim();
@@ -47,55 +58,61 @@ const hookUrlScanApi = setInterval(() => {
 
                 outputDiv.innerHTML = `<div style="color:#38bdf8; padding:15px; font-weight:bold; font-size:14px; animation: pulse 2s infinite;">🔍 Sending URL to urlscan.io... Please wait...</div>`;
 
-                try {
-                    // CORS Proxy ব্যবহার করে API রিকোয়েস্ট পাঠানো হচ্ছে
-                    const scanRes = await fetch("https://corsproxy.io/?https://urlscan.io/api/v1/scan/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "API-Key": API_KEY
-                        },
-                        body: JSON.stringify({
-                            url: urlToScan.startsWith('http') ? urlToScan : 'http://' + urlToScan,
-                            visibility: "public"
-                        })
-                    });
+                const targetUrl = urlToScan.startsWith('http') ? urlToScan : 'http://' + urlToScan;
 
-                    const scanData = await scanRes.json();
+                // ফিক্স: fetch-এর বদলে GM_xmlhttpRequest ব্যবহার করা হয়েছে (কোনো CORS Proxy লাগবে না)
+                GM_xmlhttpRequest({
+                    method: "POST",
+                    url: "https://urlscan.io",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "API-Key": API_KEY
+                    },
+                    data: JSON.stringify({
+                        url: targetUrl,
+                        visibility: "public"
+                    }),
+                    onload: function(response) {
+                        try {
+                            const scanData = JSON.parse(response.responseText);
 
-                    if(scanData.message === "Submission successful" || scanData.uuid) {
-                        const uuid = scanData.uuid;
-                        const resultUrl = scanData.result;
-                        
-                        outputDiv.innerHTML = `
-                            <div style="color:#facc15; padding:10px; font-size:14px;">
-                                ⏳ Scan submitted successfully!<br>
-                                <span style="font-size:12px; color:#a1a1aa;">Capturing live screenshot and analyzing network data. This takes about 10-15 seconds...</span>
-                            </div>
-                        `;
+                            if(scanData.message === "Submission successful" || scanData.uuid) {
+                                const uuid = scanData.uuid;
+                                const resultUrl = scanData.result;
+                                
+                                outputDiv.innerHTML = `
+                                    <div style="color:#facc15; padding:10px; font-size:14px;">
+                                        ⏳ Scan submitted successfully!<br>
+                                        <span style="font-size:12px; color:#a1a1aa;">Capturing live screenshot and analyzing network data. This takes about 10-15 seconds...</span>
+                                    </div>
+                                `;
 
-                        setTimeout(() => {
-                            const screenshotUrl = `https://urlscan.io/screenshots/${uuid}.png`;
-                            
-                            outputDiv.innerHTML = `
-                                <h3 style="color:#4ade80; margin-bottom:10px; font-size:16px;">✅ Scan Complete!</h3>
-                                <div style="background:black; padding:5px; border-radius:12px; border:2px solid #3f3f46; max-width:100%;">
-                                    <img src="${screenshotUrl}" style="max-width:100%; border-radius:8px; object-fit:contain;" alt="Live Screenshot Generating...">
-                                </div>
-                                <a href="${resultUrl}" target="_blank" style="display:inline-block; margin-top:15px; background:#2563eb; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:14px; font-weight:bold; box-shadow: 0 4px 10px rgba(37,99,235,0.4);">🔗 View Full Security Report</a>
-                            `;
-                        }, 12000); 
+                                setTimeout(() => {
+                                    const screenshotUrl = `https://urlscan.io/screenshots/${uuid}.png`;
+                                    
+                                    outputDiv.innerHTML = `
+                                        <h3 style="color:#4ade80; margin-bottom:10px; font-size:16px;">✅ Scan Complete!</h3>
+                                        <div style="background:black; padding:5px; border-radius:12px; border:2px solid #3f3f46; max-width:100%;">
+                                            <img src="${screenshotUrl}" style="max-width:100%; border-radius:8px; object-fit:contain;" alt="Live Screenshot Generating...">
+                                        </div>
+                                        <a href="${resultUrl}" target="_blank" style="display:inline-block; margin-top:15px; background:#2563eb; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:14px; font-weight:bold; box-shadow: 0 4px 10px rgba(37,99,235,0.4);">🔗 View Full Security Report</a>
+                                    `;
+                                }, 12000); 
 
-                    } else {
-                        outputDiv.innerHTML = `<div style="color:#ef4444; padding:10px; font-size:14px;">❌ Error: ${scanData.message || 'Scan failed'}</div>`;
+                            } else {
+                                outputDiv.innerHTML = `<div style="color:#ef4444; padding:10px; font-size:14px;">❌ Error: ${scanData.message || 'Scan failed'}</div>`;
+                            }
+                        } catch(e) {
+                            outputDiv.innerHTML = `<div style="color:#ef4444; padding:10px; font-size:14px;">❌ JSON Parsing Error!</div>`;
+                        }
+                    },
+                    onerror: function(err) {
+                        outputDiv.innerHTML = `<div style="color:#ef4444; padding:10px; font-size:14px;">⚠️ Network Error! Connection blocked or invalid API key.</div>`;
+                        console.error(err);
                     }
-
-                } catch(err) {
-                    outputDiv.innerHTML = `<div style="color:#ef4444; padding:10px; font-size:14px;">⚠️ Network/CORS Error! API blocked by browser security.</div>`;
-                    console.error(err);
-                }
+                });
             });
         }
     }
 }, 1000);
-            
+                    
