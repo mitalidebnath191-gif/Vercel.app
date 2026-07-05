@@ -1,6 +1,5 @@
-// Code Lab-এ IMEI Checker (Fixed UI Injection & Capture Phase)
+// Code Lab-এ IMEI Checker (Advanced Proxy & Error Parsing)
 const hookImeiChecker = setInterval(() => {
-    // সরাসরি "Run HTML" বাটনটিকে খুঁজবে
     const btns = document.querySelectorAll('button');
     let runBtn = null;
     
@@ -11,10 +10,7 @@ const hookImeiChecker = setInterval(() => {
         }
     }
 
-    // যদি Run HTML বাটন পাওয়া যায় এবং আমাদের বাটন না থাকে
     if (runBtn && !document.getElementById('imei-check-btn-container')) {
-        
-        // আমাদের বাটনের জন্য একটি কন্টেনার তৈরি করছি (যাতে লেআউট না ভাঙে)
         const btnContainer = document.createElement('div');
         btnContainer.id = 'imei-check-btn-container';
         btnContainer.style.cssText = "width: 100%; margin-top: 15px; display: block;";
@@ -25,17 +21,13 @@ const hookImeiChecker = setInterval(() => {
         imeiBtn.style.cssText = "background: #8b5cf6; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; width: 100%; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); text-align: center;";
         
         btnContainer.appendChild(imeiBtn);
-        
-        // Run HTML বাটনের ঠিক নিচে আমাদের বাটনটি বসিয়ে দিচ্ছি
         runBtn.parentNode.insertBefore(btnContainer, runBtn.nextSibling);
     }
 }, 1000);
 
-
-// Capture Phase: যেকোনো জায়গায় ক্লিক হলে চেক করবে সেটা IMEI বাটন কিনা (১০০% কাজ করবে)
+// Capture Phase
 window.addEventListener('click', (e) => {
     const clickedBtn = e.target.closest('#imei-check-btn');
-    
     if (clickedBtn) {
         e.preventDefault();
         e.stopPropagation();
@@ -43,8 +35,7 @@ window.addEventListener('click', (e) => {
     }
 }, true);
 
-
-// IMEI Pop-up UI Open করার ফাংশন
+// IMEI Pop-up UI Open
 function openImeiModal() {
     let modal = document.getElementById('imei-modal');
     
@@ -64,17 +55,14 @@ function openImeiModal() {
             <button id="search-imei-btn" style="width:100%; background:#8b5cf6; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px;">Search Device</button>
             
             <div id="imei-result" style="margin-top:15px; background:black; padding:15px; border-radius:10px; border:1px solid #3f3f46; display:none; flex-direction:column; gap:8px; max-height:250px; overflow-y:auto;">
-                <!-- Result এখানে আসবে -->
             </div>
         `;
         document.body.appendChild(modal);
 
-        // Close Button Logic
         document.getElementById('close-imei-btn').addEventListener('click', () => {
             document.getElementById('imei-modal').style.display = 'none';
         });
 
-        // Search Button Logic
         document.getElementById('search-imei-btn').addEventListener('click', async () => {
             const imeiVal = document.getElementById('imei-input').value.trim();
             const resDiv = document.getElementById('imei-result');
@@ -88,37 +76,46 @@ function openImeiModal() {
             resDiv.innerHTML = `<span style="color:#38bdf8; font-size:14px; text-align:center; animation: pulse 1.5s infinite;">⏳ Fetching device info...</span>`;
 
             try {
-                // CORS Proxy
-                const apiUrl = `https://corsproxy.io/?https://alpha.imeicheck.com/api/modelBrandName?imei=${imeiVal}&format=json`;
+                // AllOrigins Proxy ব্যবহার করা হলো
+                const targetUrl = encodeURIComponent(`https://alpha.imeicheck.com/api/modelBrandName?imei=${imeiVal}&format=json`);
+                const apiUrl = `https://api.allorigins.win/get?url=${targetUrl}`;
+                
                 const response = await fetch(apiUrl);
-                const data = await response.json();
+                const proxyData = await response.json();
 
-                if (data && Object.keys(data).length > 0 && !data.error) {
-                    let html = '<h3 style="color:#4ade80; margin:0 0 10px 0; font-size:15px; text-align:center;">✅ Device Details</h3>';
-                    
-                    for (const [key, value] of Object.entries(data)) {
-                        if(value && typeof value !== 'object') {
-                            const formattedKey = key.replace(/([A-Z])/g, ' $1').toUpperCase();
-                            
-                            html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #3f3f46; padding-bottom:6px; margin-bottom:6px;">
-                                <span style="color:#a1a1aa; font-size:12px;">${formattedKey}:</span>
-                                <span style="color:white; font-size:12px; font-weight:bold; text-align:right; max-width:60%; word-break:break-word;">${value}</span>
-                            </div>`;
+                if (proxyData.contents) {
+                    const data = JSON.parse(proxyData.contents);
+
+                    if (data && Object.keys(data).length > 0 && !data.error) {
+                        let html = '<h3 style="color:#4ade80; margin:0 0 10px 0; font-size:15px; text-align:center;">✅ Device Details</h3>';
+                        
+                        for (const [key, value] of Object.entries(data)) {
+                            if(value && typeof value !== 'object') {
+                                const formattedKey = key.replace(/([A-Z])/g, ' $1').toUpperCase();
+                                html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #3f3f46; padding-bottom:6px; margin-bottom:6px;">
+                                    <span style="color:#a1a1aa; font-size:12px;">${formattedKey}:</span>
+                                    <span style="color:white; font-size:12px; font-weight:bold; text-align:right; max-width:60%; word-break:break-word;">${value}</span>
+                                </div>`;
+                            }
                         }
+                        resDiv.innerHTML = html;
+                    } else {
+                        // API নিজে থেকে যেই এরর মেসেজ দিচ্ছে, সেটা সরাসরি স্ক্রিনে শো করবে
+                        const errorMsg = data.error || data.message || "API doesn't have data for this IMEI.";
+                        resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API Reply: ${errorMsg}</span>`;
                     }
-                    resDiv.innerHTML = html;
                 } else {
-                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ Device not found. Check IMEI.</span>`;
+                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API didn't return any data.</span>`;
                 }
 
             } catch (error) {
-                resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">⚠️ API Error! Please try again later.</span>`;
+                resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">⚠️ Network Error! The API might be offline.</span>`;
                 console.error(error);
             }
         });
 
     } else {
-        // আগে থেকেই পপ-আপ তৈরি থাকলে শুধু শো করবে
         modal.style.display = 'flex';
     }
-}
+            }
+                            
