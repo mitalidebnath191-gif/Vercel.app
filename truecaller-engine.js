@@ -1,6 +1,5 @@
-// NEXUS Truecaller OS Engine (Main Screen Only)
+// NEXUS Truecaller OS Engine (Smart Parsing & Error Handling)
 (function() {
-    // ১. ফ্লোটিং বাটন তৈরি করা (বাম দিকে)
     const initTruecallerBtn = setInterval(() => {
         if (!document.getElementById('nexus-truecaller-fab')) {
             const fab = document.createElement('button');
@@ -16,24 +15,17 @@
         }
     }, 1000);
 
-    // ২. মেইন স্ক্রিন ডিটেকশন লজিক (শুধুমাত্র মেইন স্ক্রিনেই দেখাবে)
     setInterval(() => {
         const fab = document.getElementById('nexus-truecaller-fab');
         if (fab) {
-            // যদি "AI Chat" বা "Global Chat" লেখাটি স্ক্রিনে দৃশ্যমান থাকে, তার মানে আমরা মেইন স্ক্রিনে আছি
             const isMainScreen = Array.from(document.querySelectorAll('div, span, h2, h3, p')).some(el => 
                 el.innerText && (el.innerText.trim() === 'AI Chat' || el.innerText.trim() === 'Global Chat') && el.offsetParent !== null
             );
-            
-            if (isMainScreen) {
-                fab.style.display = 'flex';
-            } else {
-                fab.style.display = 'none'; // অন্য ফিচারে ঢুকলে হাইড হয়ে যাবে
-            }
+            if (isMainScreen) fab.style.display = 'flex';
+            else fab.style.display = 'none';
         }
     }, 500);
 
-    // ৩. পপ-আপ ডিজাইন ও API কলিং লজিক
     function openTruecallerModal() {
         let modal = document.getElementById('truecaller-modal');
         if (modal) modal.remove();
@@ -55,7 +47,6 @@
             </div>
         `;
         document.body.appendChild(modal);
-
         document.getElementById('close-tc-btn').onclick = () => modal.remove();
 
         document.getElementById('tc-search-btn').onclick = async () => {
@@ -67,36 +58,43 @@
                 return;
             }
 
-            // যদি ইউজার 91 না দেয়, তবে অটোমেটিক 91 যোগ করে নেওয়া হবে
             const formattedNumber = numInput.length === 10 ? "91" + numInput : numInput;
-
             resDiv.style.display = 'flex';
-            resDiv.innerHTML = `<span style="color:#38bdf8; font-size:13px; text-align:center; animation: pulse 1.5s infinite;">⏳ Searching Truecaller Database...</span>`;
+            resDiv.innerHTML = `<span style="color:#38bdf8; font-size:13px; text-align:center; animation: pulse 1.5s infinite;">⏳ Searching Database...</span>`;
 
             try {
-                // আপনার দেওয়া RapidAPI লজিক
-                const options = {
+                const response = await fetch(`https://truecaller-data2.p.rapidapi.com/search/${formattedNumber}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                         'x-rapidapi-host': 'truecaller-data2.p.rapidapi.com',
                         'x-rapidapi-key': 'bae47b7f91msh5916b9a175c7aeap1387ddjsncec825a93b2a'
                     }
-                };
-
-                const response = await fetch(`https://truecaller-data2.p.rapidapi.com/search/${formattedNumber}`, options);
+                });
+                
                 const data = await response.json();
+                
+                // ১. যদি API থেকে Error মেসেজ আসে (যেমন: Quota Exceeded)
+                if (data.message) {
+                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API Error: ${data.message}</span>`;
+                    return;
+                }
 
-                // হিস্ট্রিতে সেভ করা
-                if(window.addNexusHistory) window.addNexusHistory(`Searched: +${formattedNumber}`, "📞 Truecaller");
+                // ২. বিভিন্ন ধরনের Data Structure ধরার লজিক
+                let person = null;
+                if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+                    person = data.data[0];
+                } else if (Array.isArray(data) && data.length > 0) {
+                    person = data[0];
+                } else if (data && data.name) {
+                    person = data;
+                }
 
-                // API থেকে ডেটা বের করে সুন্দর করে সাজানো
-                if (data && data.data && data.data.length > 0) {
-                    const person = data.data[0];
+                if (person && person.name) {
                     const name = person.name || "Unknown Name";
-                    const carrier = person.phones && person.phones[0] ? person.phones[0].carrier : "N/A";
-                    const email = person.internetAddresses && person.internetAddresses[0] ? person.internetAddresses[0].id : "No Email Found";
-                    const city = person.addresses && person.addresses[0] ? person.addresses[0].city : "Unknown Location";
+                    const carrier = (person.phones && person.phones[0] && person.phones[0].carrier) ? person.phones[0].carrier : "N/A";
+                    const email = (person.internetAddresses && person.internetAddresses[0]) ? person.internetAddresses[0].id : "No Email Found";
+                    const city = (person.addresses && person.addresses[0]) ? person.addresses[0].city : "Unknown Location";
 
                     resDiv.innerHTML = `
                         <h3 style="color:#4ade80; margin:0 0 10px 0; font-size:15px; text-align:center; border-bottom: 1px dashed #3f3f46; padding-bottom: 5px;">✅ Verified Identity</h3>
@@ -118,13 +116,15 @@
                         </div>
                     `;
                 } else {
-                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ No details found for this number.</span>`;
+                    resDiv.innerHTML = `
+                        <span style="color:#ef4444; font-size:13px; text-align:center; margin-bottom:10px;">❌ No details found.</span>
+                        <div style="font-size:10px; color:#a1a1aa; word-break:break-all; background:#27272a; padding:5px; border-radius:5px;">Raw Response: ${JSON.stringify(data).substring(0, 100)}...</div>
+                    `;
                 }
             } catch (err) {
-                resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">⚠️ API Error or Network Issue!</span>`;
-                console.error(err);
+                resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">⚠️ Network Issue or API Blocked!</span>`;
             }
         };
     }
 })();
-                                            
+                    
