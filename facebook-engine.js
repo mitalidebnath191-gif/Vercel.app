@@ -1,27 +1,23 @@
-// NEXUS Facebook Secret Engine (Activated via /facebook command)
+// NEXUS Facebook Secret Engine (ID Scanner)
 (function() {
-    // ১. লোকাল স্টোরেজ চেক করা (যাতে একবার আনলক হলে পরে আর হাইড না হয়)
     let fbUnlocked = localStorage.getItem('nexus_fb_unlocked') === 'true';
 
-    // ২. চ্যাটে /facebook কমান্ড ট্র্যাক করার লজিক
     function checkSecretCommand(text) {
         if (text && text.trim().toLowerCase() === '/facebook') {
             if (!fbUnlocked) {
                 fbUnlocked = true;
                 localStorage.setItem('nexus_fb_unlocked', 'true');
-                alert("🔓 Secret Unlocked: Facebook Info Generator is now active!");
+                alert("🔓 Secret Unlocked: Facebook ID Scanner is now active!");
             }
         }
     }
 
-    // ইউজার এন্টার চাপলে ইনপুট চেক করবে
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.target.tagName.match(/INPUT|TEXTAREA/i)) {
             checkSecretCommand(e.target.value);
         }
     });
 
-    // ইউজার সেন্ড বাটনে ক্লিক করলে ইনপুট চেক করবে
     window.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
             const inputs = document.querySelectorAll('input[type="text"], textarea');
@@ -29,13 +25,12 @@
         }
     });
 
-    // ৩. বাটন তৈরি করা (Notes বাটনের ঠিক ওপরে)
+    // বাটন তৈরি
     const initFbBtn = setInterval(() => {
         if (fbUnlocked && !document.getElementById('nexus-fb-fab')) {
             const fab = document.createElement('button');
             fab.id = 'nexus-fb-fab';
-            fab.innerHTML = '📘 FB Info';
-            // Note বাটন bottom 80px এ আছে, তাই এটি 140px এ রাখা হলো (ঠিক ওপরে)
+            fab.innerHTML = '📘 FB Scanner';
             fab.style.cssText = "position: fixed; bottom: 140px; right: 20px; background: #1877f2; color: white; padding: 12px 20px; border-radius: 50px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4); z-index: 999998; transition: 0.3s; display: flex; align-items: center; gap: 8px;";
             
             fab.onmouseover = () => { fab.style.transform = "scale(1.05)"; };
@@ -46,7 +41,7 @@
         }
     }, 1000);
 
-    // ৪. ফেসবুক পপ-আপ ও API লজিক
+    // পপ-আপ ও API লজিক
     function openFbModal() {
         let modal = document.getElementById('fb-modal');
         if (modal) modal.remove();
@@ -57,68 +52,82 @@
 
         modal.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #3f3f46; padding-bottom: 10px;">
-                <h2 style="color:#1877f2; font-weight:bold; font-size:18px; margin:0;">📘 FB Info Extractor</h2>
+                <h2 style="color:#1877f2; font-weight:bold; font-size:18px; margin:0;">📘 FB ID Scanner</h2>
                 <button id="close-fb-btn" style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">X</button>
             </div>
             
-            <input type="text" id="fb-query-input" placeholder="Enter keyword (e.g. pizza, gaming)..." style="width:100%; background:#27272a; border:1px solid #52525b; color:white; padding:12px 15px; border-radius:8px; font-size:14px; outline:none; box-sizing:border-box; margin-bottom:12px;" />
-            <button id="fb-search-btn" style="background:#1877f2; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px;">Extract Data</button>
+            <div style="font-size:12px; color:#a1a1aa; margin-bottom:10px; text-align:center;">Enter Profile ID or Username to extract all data.</div>
             
-            <div id="fb-result" style="margin-top:15px; background:black; padding:15px; border-radius:10px; border:1px solid #3f3f46; display:none; flex-direction:column; gap:8px; max-height:250px; overflow-y:auto;">
+            <input type="text" id="fb-id-input" placeholder="e.g. zuck or 1000837..." style="width:100%; background:#27272a; border:1px solid #52525b; color:white; padding:12px 15px; border-radius:8px; font-size:14px; outline:none; box-sizing:border-box; margin-bottom:12px; font-family:monospace;" />
+            
+            <button id="fb-scan-btn" style="background:#1877f2; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px;">Scan ID Data</button>
+            
+            <div id="fb-result" style="margin-top:15px; background:black; padding:15px; border-radius:10px; border:1px solid #3f3f46; display:none; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto;">
             </div>
         `;
         document.body.appendChild(modal);
         
         document.getElementById('close-fb-btn').onclick = () => modal.remove();
 
-        document.getElementById('fb-search-btn').onclick = async () => {
-            const query = document.getElementById('fb-query-input').value.trim();
+        document.getElementById('fb-scan-btn').onclick = async () => {
+            const fbId = document.getElementById('fb-id-input').value.trim();
             const resDiv = document.getElementById('fb-result');
             
-            if (!query) {
-                alert("Please enter a search keyword!");
+            if (!fbId) {
+                alert("Please enter a valid Facebook ID or Username!");
                 return;
             }
 
             resDiv.style.display = 'flex';
-            resDiv.innerHTML = `<span style="color:#38bdf8; font-size:13px; text-align:center; animation: pulse 1.5s infinite;">⏳ Fetching Facebook Data...</span>`;
+            resDiv.innerHTML = `<span style="color:#38bdf8; font-size:13px; text-align:center; animation: pulse 1.5s infinite;">⏳ Scanning Profile Data...</span>`;
 
             try {
-                // আপনার দেওয়া API 
-                const response = await fetch(`https://facebook-scraper3.p.rapidapi.com/ads/search?query=${encodeURIComponent(query)}&country=US&active_status=ALL`, {
+                // ID থেকে সমস্ত ডেটা বের করার জন্য API URL (username বা user_id প্যারামিটার দিয়ে)
+                const url = `https://facebook-scraper3.p.rapidapi.com/user/info?username=${encodeURIComponent(fbId)}`;
+
+                const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                         'x-rapidapi-host': 'facebook-scraper3.p.rapidapi.com',
-                        'x-rapidapi-key': 'bae47b7f91msh5916b9a175c7aeap1387ddjsncec825a93b2a' // খেয়াল রাখবেন, লিমিট শেষ হলে আগের মতো Key পাল্টাতে হতে পারে
+                        'x-rapidapi-key': 'bae47b7f91msh5916b9a175c7aeap1387ddjsncec825a93b2a' // আপনার API Key
                     }
                 });
                 
                 const data = await response.json();
                 
-                if (window.addNexusHistory) window.addNexusHistory(`FB Scraped: ${query}`, "📘 FB Info");
+                if (window.addNexusHistory) window.addNexusHistory(`FB Scanned: ${fbId}`, "📘 FB Scanner");
 
-                if (data.message && data.message.toLowerCase().includes("exceeded")) {
-                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API Quota Exceeded. Limit Reached!</span>`;
+                // API Error Handling
+                if (data.message && (data.message.includes("exceeded") || data.message.includes("Invalid"))) {
+                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API Error: ${data.message}</span>`;
+                    return;
+                }
+                if (response.status === 404) {
+                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ ID Not Found or Private Profile.</span>`;
                     return;
                 }
 
-                // API থেকে পাওয়া ডেটা সরাসরি স্ক্রিনে প্রিন্ট করা হচ্ছে
+                // ID এর সমস্ত ডেটা স্ক্রিনে সুন্দর করে প্রিন্ট করা
                 if (data && Object.keys(data).length > 0) {
+                    // যদি নামের ডেটা আলাদা করে পাওয়া যায়, তবে সেটা হাইলাইট করা হবে
+                    const displayName = data.name || data.title || fbId; 
+                    
                     resDiv.innerHTML = `
-                        <h3 style="color:#4ade80; margin:0 0 10px 0; font-size:15px; text-align:center; border-bottom: 1px dashed #3f3f46; padding-bottom: 5px;">✅ Data Extracted Successfully</h3>
-                        <div style="font-size:12px; color:#a1a1aa; word-break:break-all; background:#27272a; padding:10px; border-radius:5px; line-height: 1.5;">
-                            <span style="color:#38bdf8; font-weight:bold;">Extracted Output:</span><br><br>
+                        <h3 style="color:#4ade80; margin:0 0 10px 0; font-size:15px; text-align:center; border-bottom: 1px dashed #3f3f46; padding-bottom: 5px;">✅ Profile Scanned: ${displayName}</h3>
+                        
+                        <div style="font-size:12px; color:#a1a1aa; background:#27272a; padding:10px; border-radius:5px; line-height: 1.5; overflow-wrap: break-word;">
+                            <span style="color:#38bdf8; font-weight:bold;">All Extracted Data:</span><br><br>
                             ${JSON.stringify(data, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
                         </div>
                     `;
                 } else {
-                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ No data found for this keyword.</span>`;
+                    resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ No public data found for this ID.</span>`;
                 }
             } catch (err) {
-                resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">⚠️ API Error or Network Issue!</span>`;
+                resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">⚠️ API URL Error or Network Issue!</span>`;
             }
         };
     }
 })();
-                                  
+                                                   
