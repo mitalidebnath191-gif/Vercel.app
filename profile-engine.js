@@ -1,39 +1,74 @@
-// NEXUS Profile & UI Customizer Engine (With Compression & Layer Fix)
+// NEXUS Profile & UI Customizer Engine (With Deep CSS Override)
 (function() {
-    // ১. ব্যাকগ্রাউন্ড সেট করার অ্যাডভান্সড লজিক
+    // ১. ব্যাকগ্রাউন্ড সেট করার অ্যাডভান্সড CSS ম্যাজিক লজিক
     function applyAppBackground() {
         const savedBg = localStorage.getItem('nexus_app_bg');
-        let bgLayer = document.getElementById('nexus-custom-bg');
+        let styleTag = document.getElementById('nexus-bg-override');
+
+        // স্টাইল ট্যাগ না থাকলে তৈরি করবে
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'nexus-bg-override';
+            document.head.appendChild(styleTag);
+        }
 
         if (savedBg) {
-            // যদি ব্যাকগ্রাউন্ড লেয়ার না থাকে, তবে তৈরি করবে
-            if (!bgLayer) {
-                bgLayer = document.createElement('div');
-                bgLayer.id = 'nexus-custom-bg';
-                bgLayer.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -9999; background-size: cover; background-position: center; pointer-events: none;";
-                document.body.appendChild(bgLayer);
-            }
-            bgLayer.style.backgroundImage = `url('${savedBg}')`;
-            
-            // অ্যাপের সলিড কালারগুলোকে ট্রান্সপারেন্ট করে দেওয়া
-            document.body.style.backgroundColor = "transparent";
-            const mainScreen = document.getElementById('main-screen');
-            if(mainScreen) mainScreen.style.backgroundColor = "transparent";
+            // CSS ইনজেকশন: অ্যাপের নিজস্ব সলিড কালার মুছে দিয়ে ব্যাকগ্রাউন্ড দেখানো
+            styleTag.innerHTML = `
+                /* বডি এবং এইচটিএমএল ট্রান্সপারেন্ট করা */
+                body, html {
+                    background-color: transparent !important;
+                    background: transparent !important;
+                }
+                
+                /* সবার পেছনে ছবি বসানো */
+                body::before {
+                    content: "";
+                    position: fixed;
+                    top: 0; left: 0; width: 100vw; height: 100vh;
+                    background-image: url('${savedBg}');
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    z-index: -99999;
+                    pointer-events: none;
+                }
+                
+                /* ছবির ওপর হালকা কালো শ্যাডো (যাতে অ্যাপের লেখা স্পষ্ট বোঝা যায়) */
+                body::after {
+                    content: "";
+                    position: fixed;
+                    top: 0; left: 0; width: 100vw; height: 100vh;
+                    background-color: rgba(0, 0, 0, 0.5) !important; 
+                    z-index: -99998;
+                    pointer-events: none;
+                }
+                
+                /* অ্যাপের মেইন কন্টেইনারগুলোকে জোর করে স্বচ্ছ (transparent) করা */
+                #main-screen, div[id*="root"], div[id*="app"], body > div {
+                    background-color: transparent !important;
+                    background: transparent !important;
+                }
+                
+                /* আপনার লগইন পেজের ব্যাকগ্রাউন্ড ফিক্স */
+                #login-screen {
+                    background-color: rgba(24, 24, 27, 0.85) !important;
+                    backdrop-filter: blur(10px);
+                }
+            `;
         } else {
-            // যদি রিমুভ করা হয়, তবে আগের ডার্ক মোডে ফিরে যাবে
-            if (bgLayer) bgLayer.remove();
-            document.body.style.backgroundColor = "#18181b"; 
-            const mainScreen = document.getElementById('main-screen');
-            if(mainScreen) mainScreen.style.backgroundColor = "";
+            // কাস্টম ব্যাকগ্রাউন্ড রিমুভ করলে সব আগের মতো করে দেওয়া
+            styleTag.innerHTML = ''; 
         }
     }
-    applyAppBackground(); 
+    applyAppBackground(); // পেজ লোড হলেই রান করবে
 
     function getInitials(name) {
         if (!name) return "NX";
         return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     }
 
+    // প্রোফাইল আইকন এবং নাম ডিটেক্ট করার লুপ
     setInterval(() => {
         const currentName = localStorage.getItem('nexus_profile_name') || 'Alex Rivera';
         const currentImg = localStorage.getItem('nexus_profile_img') || '';
@@ -75,6 +110,7 @@
         }
     }, 1000);
 
+    // পপ-আপ ডিজাইন
     function openProfileModal() {
         let modal = document.getElementById('profile-modal');
         if (modal) modal.remove();
@@ -135,7 +171,6 @@
 
         let finalBase64Image = currentImg;
 
-        // Profile Image Logic (with compression to save space)
         fileInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -146,7 +181,6 @@
             }
         };
 
-        // App Background Selection Logic (With compression)
         triggerBgBtn.onclick = () => bgInput.click();
 
         bgInput.onchange = (e) => {
@@ -155,7 +189,6 @@
                 const triggerOriginalText = triggerBgBtn.innerHTML;
                 triggerBgBtn.innerHTML = "⏳ Processing Image...";
                 
-                // স্ক্রিনের সাইজ অনুযায়ী কম্প্রেস করবে (max 1080px) যাতে LocalStorage ক্র্যাশ না করে
                 compressImage(file, 1080, (base64Bg) => {
                     try {
                         localStorage.setItem('nexus_app_bg', base64Bg);
@@ -188,11 +221,9 @@
 
             localStorage.setItem('nexus_profile_name', newName);
             localStorage.setItem('nexus_profile_img', finalBase64Image);
-
             modal.remove();
         };
 
-        // ইমেজ কম্প্রেস করার ফাংশন (Canvas API ব্যবহার করে)
         function compressImage(file, maxSize, callback) {
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -217,7 +248,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // JPEG ফরম্যাটে 0.6 কোয়ালিটি সেট করা হয়েছে সাইজ কমানোর জন্য
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
                     callback(compressedBase64);
                 };
@@ -227,4 +257,4 @@
         }
     }
 })();
-                                                   
+                
