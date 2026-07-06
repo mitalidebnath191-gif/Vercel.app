@@ -1,11 +1,9 @@
-// NEXUS Profile & UI Customizer Engine (With Deep CSS Override)
+// NEXUS Profile, UI Customizer & QR Scanner Engine
 (function() {
-    // ১. ব্যাকগ্রাউন্ড সেট করার অ্যাডভান্সড CSS ম্যাজিক লজিক
     function applyAppBackground() {
         const savedBg = localStorage.getItem('nexus_app_bg');
         let styleTag = document.getElementById('nexus-bg-override');
 
-        // স্টাইল ট্যাগ না থাকলে তৈরি করবে
         if (!styleTag) {
             styleTag = document.createElement('style');
             styleTag.id = 'nexus-bg-override';
@@ -13,15 +11,11 @@
         }
 
         if (savedBg) {
-            // CSS ইনজেকশন: অ্যাপের নিজস্ব সলিড কালার মুছে দিয়ে ব্যাকগ্রাউন্ড দেখানো
             styleTag.innerHTML = `
-                /* বডি এবং এইচটিএমএল ট্রান্সপারেন্ট করা */
                 body, html {
                     background-color: transparent !important;
                     background: transparent !important;
                 }
-                
-                /* সবার পেছনে ছবি বসানো */
                 body::before {
                     content: "";
                     position: fixed;
@@ -33,8 +27,6 @@
                     z-index: -99999;
                     pointer-events: none;
                 }
-                
-                /* ছবির ওপর হালকা কালো শ্যাডো (যাতে অ্যাপের লেখা স্পষ্ট বোঝা যায়) */
                 body::after {
                     content: "";
                     position: fixed;
@@ -43,32 +35,26 @@
                     z-index: -99998;
                     pointer-events: none;
                 }
-                
-                /* অ্যাপের মেইন কন্টেইনারগুলোকে জোর করে স্বচ্ছ (transparent) করা */
                 #main-screen, div[id*="root"], div[id*="app"], body > div {
                     background-color: transparent !important;
                     background: transparent !important;
                 }
-                
-                /* আপনার লগইন পেজের ব্যাকগ্রাউন্ড ফিক্স */
                 #login-screen {
                     background-color: rgba(24, 24, 27, 0.85) !important;
                     backdrop-filter: blur(10px);
                 }
             `;
         } else {
-            // কাস্টম ব্যাকগ্রাউন্ড রিমুভ করলে সব আগের মতো করে দেওয়া
             styleTag.innerHTML = ''; 
         }
     }
-    applyAppBackground(); // পেজ লোড হলেই রান করবে
+    applyAppBackground(); 
 
     function getInitials(name) {
         if (!name) return "NX";
         return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     }
 
-    // প্রোফাইল আইকন এবং নাম ডিটেক্ট করার লুপ
     setInterval(() => {
         const currentName = localStorage.getItem('nexus_profile_name') || 'Alex Rivera';
         const currentImg = localStorage.getItem('nexus_profile_img') || '';
@@ -110,7 +96,6 @@
         }
     }, 1000);
 
-    // পপ-আপ ডিজাইন
     function openProfileModal() {
         let modal = document.getElementById('profile-modal');
         if (modal) modal.remove();
@@ -121,7 +106,7 @@
 
         modal = document.createElement('div');
         modal.id = 'profile-modal';
-        modal.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 380px; background: #18181b; border: 1px solid #a855f7; border-radius: 16px; padding: 20px; z-index: 999999; box-shadow: 0 10px 40px rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; gap: 15px;";
+        modal.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 380px; background: #18181b; border: 1px solid #a855f7; border-radius: 16px; padding: 20px; z-index: 999999; box-shadow: 0 10px 40px rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; gap: 15px; max-height: 90vh; overflow-y: auto;";
 
         modal.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%; border-bottom: 1px solid #3f3f46; padding-bottom: 10px;">
@@ -129,7 +114,7 @@
                 <button id="close-profile-btn" style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">X</button>
             </div>
             
-            <div id="profile-preview-circle" style="width: 80px; height: 80px; border-radius: 50%; background: #a855f7; color: white; font-size: 28px; font-weight: bold; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 2px solid #a855f7; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);">
+            <div id="profile-preview-circle" style="width: 80px; height: 80px; border-radius: 50%; background: #a855f7; color: white; font-size: 28px; font-weight: bold; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 2px solid #a855f7; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3); flex-shrink: 0;">
                 ${currentImg ? `<img src="${currentImg}" style="width:100%; height:100%; object-fit:cover;">` : getInitials(currentName)}
             </div>
 
@@ -147,15 +132,21 @@
             
             <div style="width:100%; border-top: 1px solid #3f3f46; margin-top: 10px; padding-top: 15px; text-align: center;">
                 <label style="color:#a1a1aa; font-size:12px; display:block; margin-bottom:8px;">App Background (Full Screen):</label>
-                
                 <input type="file" id="ui-bg-input" accept="image/*" style="display:none;" />
-                
                 <button id="trigger-bg-btn" style="background:#27272a; color:#38bdf8; border:1px solid #38bdf8; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:14px; transition: 0.3s; display:flex; align-items:center; justify-content:center; gap:8px;">
                     🖼️ Change UI Background
                 </button>
-                
                 <button id="reset-bg-btn" style="background:transparent; color:#ef4444; border:none; padding:8px; font-size:12px; cursor:pointer; width:100%; margin-top:5px; text-decoration:underline; display: ${hasCustomBg ? 'block' : 'none'};">
                     Remove Custom Background
+                </button>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- নতুন যোগ করা QR Code Scanner অপশন -->
+            <!-- ============================================== -->
+            <div style="width:100%; border-top: 1px dashed #3f3f46; margin-top: 5px; padding-top: 15px; text-align: center;">
+                <button id="start-qr-btn" style="background:#10b981; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; transition: 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                    📷 Scan QR Code
                 </button>
             </div>
         `;
@@ -164,10 +155,10 @@
         const fileInput = document.getElementById('profile-image-input');
         const nameInput = document.getElementById('profile-name-input');
         const previewCircle = document.getElementById('profile-preview-circle');
-        
         const triggerBgBtn = document.getElementById('trigger-bg-btn');
         const bgInput = document.getElementById('ui-bg-input');
         const resetBgBtn = document.getElementById('reset-bg-btn');
+        const startQrBtn = document.getElementById('start-qr-btn');
 
         let finalBase64Image = currentImg;
 
@@ -218,11 +209,87 @@
                 alert("Name cannot be empty!");
                 return;
             }
-
             localStorage.setItem('nexus_profile_name', newName);
             localStorage.setItem('nexus_profile_img', finalBase64Image);
             modal.remove();
         };
+
+        // QR Scanner Logic
+        startQrBtn.onclick = () => {
+            modal.style.display = 'none'; // প্রোফাইল পপ-আপটি লুকিয়ে রাখা হলো
+            openQRScannerModal();
+        };
+
+        function openQRScannerModal() {
+            // যদি আগে থেকে স্ক্যানার লাইব্রেরি না থাকে তবে ডাইনামিকালি লোড করবে
+            if (typeof Html5Qrcode === 'undefined') {
+                const script = document.createElement('script');
+                script.src = "https://unpkg.com/html5-qrcode";
+                script.onload = initScanner;
+                document.head.appendChild(script);
+            } else {
+                initScanner();
+            }
+        }
+
+        function initScanner() {
+            let qrModal = document.getElementById('qr-modal');
+            if (qrModal) qrModal.remove();
+
+            qrModal = document.createElement('div');
+            qrModal.id = 'qr-modal';
+            qrModal.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 9999999; display: flex; flex-direction: column; align-items: center; justify-content: center;";
+            
+            qrModal.innerHTML = `
+                <div style="width: 90%; max-width: 400px; background: #18181b; padding: 20px; border-radius: 16px; border: 1px solid #10b981;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                        <h2 style="color:#10b981; margin:0; font-size: 18px;">📷 QR Code Scanner</h2>
+                        <button id="close-qr-btn" style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">X</button>
+                    </div>
+                    
+                    <!-- ক্যামেরা ভিউ এখানে আসবে -->
+                    <div id="qr-reader" style="width: 100%; min-height: 250px; background: black; border-radius: 8px; overflow: hidden; position: relative;"></div>
+                    
+                    <div id="qr-result" style="margin-top: 15px; color: #a1a1aa; font-size: 13px; text-align: center; word-break: break-all; background: #27272a; padding: 10px; border-radius: 8px;">
+                        Scanning... Please point camera at a QR code.
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(qrModal);
+
+            const html5Qrcode = new Html5Qrcode("qr-reader");
+            
+            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                const resultBox = document.getElementById('qr-result');
+                
+                // যদি রেজাল্ট লিংক হয় তবে ক্লিকেবল করা
+                let resultHtml = decodedText;
+                if(decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
+                    resultHtml = `<a href="${decodedText}" target="_blank" style="color:#38bdf8; text-decoration:underline;">${decodedText}</a>`;
+                }
+                
+                resultBox.innerHTML = `<span style="color:#4ade80; font-weight:bold;">✅ Scanned Successfully:</span> <br><br>${resultHtml}`;
+                
+                if(window.addNexusHistory) window.addNexusHistory(`Scanned QR Code`, "📷 QR Scanner");
+
+                // স্ক্যান হওয়ার পর ক্যামেরা বন্ধ করা
+                html5Qrcode.stop().catch(err => console.log(err));
+            };
+            
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            // ব্যাক ক্যামেরা (environment) দিয়ে স্ক্যান শুরু করা
+            html5Qrcode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+            .catch((err) => {
+                document.getElementById('qr-result').innerHTML = `<span style="color:#ef4444; font-weight:bold;">⚠️ Error: Cannot access camera!</span><br>Please allow camera permission in your browser settings.`;
+            });
+
+            document.getElementById('close-qr-btn').onclick = () => {
+                html5Qrcode.stop().catch(e => console.log(e));
+                qrModal.remove();
+                modal.style.display = 'flex'; // আগের প্রোফাইল পপ-আপ আবার ফিরিয়ে আনা হলো
+            };
+        }
 
         function compressImage(file, maxSize, callback) {
             const reader = new FileReader();
@@ -257,4 +324,4 @@
         }
     }
 })();
-                
+            
