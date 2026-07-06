@@ -1,27 +1,39 @@
-// NEXUS Profile & UI Customizer Engine
+// NEXUS Profile & UI Customizer Engine (With Compression & Layer Fix)
 (function() {
-    // ১. অ্যাপ লোড হওয়ার সাথে সাথে সেভ করা ব্যাকগ্রাউন্ড সেট করার লজিক
+    // ১. ব্যাকগ্রাউন্ড সেট করার অ্যাডভান্সড লজিক
     function applyAppBackground() {
         const savedBg = localStorage.getItem('nexus_app_bg');
+        let bgLayer = document.getElementById('nexus-custom-bg');
+
         if (savedBg) {
-            document.body.style.backgroundImage = `url('${savedBg}')`;
-            document.body.style.backgroundSize = 'cover';
-            document.body.style.backgroundPosition = 'center';
-            document.body.style.backgroundAttachment = 'fixed'; // স্ক্রল করলেও ব্যাকগ্রাউন্ড ফিক্সড থাকবে
-            document.body.style.backgroundRepeat = 'no-repeat';
+            // যদি ব্যাকগ্রাউন্ড লেয়ার না থাকে, তবে তৈরি করবে
+            if (!bgLayer) {
+                bgLayer = document.createElement('div');
+                bgLayer.id = 'nexus-custom-bg';
+                bgLayer.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -9999; background-size: cover; background-position: center; pointer-events: none;";
+                document.body.appendChild(bgLayer);
+            }
+            bgLayer.style.backgroundImage = `url('${savedBg}')`;
+            
+            // অ্যাপের সলিড কালারগুলোকে ট্রান্সপারেন্ট করে দেওয়া
+            document.body.style.backgroundColor = "transparent";
+            const mainScreen = document.getElementById('main-screen');
+            if(mainScreen) mainScreen.style.backgroundColor = "transparent";
         } else {
-            document.body.style.backgroundImage = 'none';
+            // যদি রিমুভ করা হয়, তবে আগের ডার্ক মোডে ফিরে যাবে
+            if (bgLayer) bgLayer.remove();
+            document.body.style.backgroundColor = "#18181b"; 
+            const mainScreen = document.getElementById('main-screen');
+            if(mainScreen) mainScreen.style.backgroundColor = "";
         }
     }
-    applyAppBackground(); // পেজ লোড হলেই রান করবে
+    applyAppBackground(); 
 
-    // ২. Initials বের করার হেল্পার ফাংশন
     function getInitials(name) {
         if (!name) return "NX";
         return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     }
 
-    // ৩. রিয়েল-টাইম UI আপডেট লুপ
     setInterval(() => {
         const currentName = localStorage.getItem('nexus_profile_name') || 'Alex Rivera';
         const currentImg = localStorage.getItem('nexus_profile_img') || '';
@@ -63,7 +75,6 @@
         }
     }, 1000);
 
-    // ৪. প্রোফাইল এবং UI চেঞ্জার পপ-আপ ডিজাইন
     function openProfileModal() {
         let modal = document.getElementById('profile-modal');
         if (modal) modal.remove();
@@ -82,18 +93,15 @@
                 <button id="close-profile-btn" style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">X</button>
             </div>
             
-            <!-- Live Preview Circle -->
             <div id="profile-preview-circle" style="width: 80px; height: 80px; border-radius: 50%; background: #a855f7; color: white; font-size: 28px; font-weight: bold; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 2px solid #a855f7; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);">
                 ${currentImg ? `<img src="${currentImg}" style="width:100%; height:100%; object-fit:cover;">` : getInitials(currentName)}
             </div>
 
-            <!-- Image File Input -->
             <div style="width:100%;">
                 <label style="color:#a1a1aa; font-size:12px; display:block; margin-bottom:5px;">Change Profile Picture:</label>
                 <input type="file" id="profile-image-input" accept="image/*" style="width:100%; color:#a1a1aa; font-size:13px; background:#27272a; padding:8px; border-radius:8px; border:1px solid #52525b; cursor:pointer;" />
             </div>
 
-            <!-- Name Input -->
             <div style="width:100%;">
                 <label style="color:#a1a1aa; font-size:12px; display:block; margin-bottom:5px;">Your Name:</label>
                 <input type="text" id="profile-name-input" value="${currentName}" placeholder="Enter name..." style="width:100%; background:#27272a; border:1px solid #52525b; color:white; padding:12px; border-radius:8px; font-size:14px; outline:none; box-sizing:border-box;" />
@@ -101,9 +109,6 @@
             
             <button id="save-profile-btn" style="background:#a855f7; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; margin-top:5px; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">Save Changes</button>
             
-            <!-- ============================================== -->
-            <!-- নতুন যোগ করা UI Background Changer অপশন -->
-            <!-- ============================================== -->
             <div style="width:100%; border-top: 1px solid #3f3f46; margin-top: 10px; padding-top: 15px; text-align: center;">
                 <label style="color:#a1a1aa; font-size:12px; display:block; margin-bottom:8px;">App Background (Full Screen):</label>
                 
@@ -130,56 +135,50 @@
 
         let finalBase64Image = currentImg;
 
-        // Profile Image Preview Logic
+        // Profile Image Logic (with compression to save space)
         fileInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                if (file.size > 2 * 1024 * 1024) {
-                    alert("Image size is too large! Please select under 2MB.");
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    finalBase64Image = event.target.result;
+                compressImage(file, 400, (base64Str) => {
+                    finalBase64Image = base64Str;
                     previewCircle.innerHTML = `<img src="${finalBase64Image}" style="width:100%; height:100%; object-fit:cover;">`;
-                };
-                reader.readAsDataURL(file);
+                });
             }
         };
 
-        // App Background Selection Logic
+        // App Background Selection Logic (With compression)
         triggerBgBtn.onclick = () => bgInput.click();
 
         bgInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                if (file.size > 5 * 1024 * 1024) { // 5MB limit for full screen image
-                    alert("Background image is too large! Please select under 5MB.");
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const base64Bg = event.target.result;
-                    localStorage.setItem('nexus_app_bg', base64Bg);
-                    applyAppBackground(); // সাথে সাথে ব্যাকগ্রাউন্ড পাল্টে যাবে
-                    resetBgBtn.style.display = 'block';
-                    alert("✅ UI Background successfully applied!");
-                };
-                reader.readAsDataURL(file);
+                const triggerOriginalText = triggerBgBtn.innerHTML;
+                triggerBgBtn.innerHTML = "⏳ Processing Image...";
+                
+                // স্ক্রিনের সাইজ অনুযায়ী কম্প্রেস করবে (max 1080px) যাতে LocalStorage ক্র্যাশ না করে
+                compressImage(file, 1080, (base64Bg) => {
+                    try {
+                        localStorage.setItem('nexus_app_bg', base64Bg);
+                        applyAppBackground(); 
+                        resetBgBtn.style.display = 'block';
+                        triggerBgBtn.innerHTML = triggerOriginalText;
+                        alert("✅ UI Background successfully applied!");
+                    } catch(err) {
+                        alert("⚠️ Error: Image is still too large. Try a different picture.");
+                        triggerBgBtn.innerHTML = triggerOriginalText;
+                    }
+                });
             }
         };
 
-        // Remove Background Logic
         resetBgBtn.onclick = () => {
             localStorage.removeItem('nexus_app_bg');
             applyAppBackground();
             resetBgBtn.style.display = 'none';
         };
 
-        // Close Button
         document.getElementById('close-profile-btn').onclick = () => modal.remove();
 
-        // Save Profile Details
         document.getElementById('save-profile-btn').onclick = () => {
             const newName = nameInput.value.trim();
             if (!newName) {
@@ -190,12 +189,42 @@
             localStorage.setItem('nexus_profile_name', newName);
             localStorage.setItem('nexus_profile_img', finalBase64Image);
 
-            if (window.addNexusHistory) {
-                window.addNexusHistory("Updated profile details", "👤 Profile");
-            }
-
             modal.remove();
         };
+
+        // ইমেজ কম্প্রেস করার ফাংশন (Canvas API ব্যবহার করে)
+        function compressImage(file, maxSize, callback) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxSize || height > maxSize) {
+                        if (width > height) {
+                            height = Math.round((height *= maxSize / width));
+                            width = maxSize;
+                        } else {
+                            width = Math.round((width *= maxSize / height));
+                            height = maxSize;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // JPEG ফরম্যাটে 0.6 কোয়ালিটি সেট করা হয়েছে সাইজ কমানোর জন্য
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    callback(compressedBase64);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
     }
 })();
-            
+                                                   
