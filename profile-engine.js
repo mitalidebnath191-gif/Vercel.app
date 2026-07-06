@@ -1,4 +1,4 @@
-// NEXUS Profile, UI Customizer & External QR Redirect
+// NEXUS Profile, UI Customizer & External QR Redirect (Icon Fix Update)
 (function() {
     function applyAppBackground() {
         const savedBg = localStorage.getItem('nexus_app_bg');
@@ -55,6 +55,7 @@
         return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     }
 
+    // প্রতি সেকেন্ডে আইকন এবং নাম আপডেট করার লুপ
     setInterval(() => {
         const currentName = localStorage.getItem('nexus_profile_name') || 'Alex Rivera';
         const currentImg = localStorage.getItem('nexus_profile_img') || '';
@@ -65,34 +66,57 @@
         const allElements = document.querySelectorAll('div, span, p, h1, h2, h3');
         
         allElements.forEach(el => {
+            // নাম খোঁজার লজিক
             if (el.innerText && (el.innerText.trim() === 'Alex Rivera' || el.innerText.trim() === currentName) && el.children.length === 0) {
                 nameEl = el;
             }
-            if (el.innerText && el.innerText.trim() === getInitials(currentName) && el.children.length === 0) {
-                avatarEl = el;
+            // আইকন (AR) খোঁজার অ্যাডভান্সড লজিক
+            if (el.innerText && (el.innerText.trim() === 'AR' || el.innerText.trim() === getInitials(currentName)) && el.children.length === 0) {
+                if(el.innerText.trim().length <= 2) {
+                    avatarEl = el;
+                }
             }
+            // যদি আগে থেকেই ছবি বসে থাকে
             if (el.querySelector('#nexus-avatar-img')) {
                 avatarEl = el;
             }
         });
 
-        if (avatarEl && !avatarEl.hasAttribute('data-profile-click')) {
-            avatarEl.setAttribute('data-profile-click', 'true');
-            avatarEl.style.cursor = 'pointer';
-            avatarEl.onclick = (e) => { e.preventDefault(); openProfileModal(); };
-            
+        // আইকনে ক্লিক ইভেন্ট এবং ছবি বসানো
+        if (avatarEl) {
+            if (!avatarEl.hasAttribute('data-profile-click')) {
+                avatarEl.setAttribute('data-profile-click', 'true');
+                avatarEl.style.cursor = 'pointer';
+                avatarEl.onclick = (e) => { e.preventDefault(); openProfileModal(); };
+            }
+
             if (currentImg) {
-                avatarEl.innerHTML = `<img src="${currentImg}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" id="nexus-avatar-img">`;
-                avatarEl.style.overflow = 'hidden';
-                avatarEl.style.padding = '0';
+                let img = avatarEl.querySelector('#nexus-avatar-img');
+                if (!img) {
+                    avatarEl.innerHTML = `<img src="${currentImg}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" id="nexus-avatar-img">`;
+                    avatarEl.style.overflow = 'hidden';
+                    avatarEl.style.padding = '0';
+                    avatarEl.style.backgroundColor = 'transparent';
+                } else if (img.src !== currentImg) {
+                    img.src = currentImg; // যদি ছবি চেঞ্জ করা হয়
+                }
+            } else {
+                if(!avatarEl.querySelector('#nexus-avatar-img') && avatarEl.innerText.trim() !== getInitials(currentName)) {
+                    avatarEl.innerText = getInitials(currentName);
+                }
             }
         }
 
-        if (nameEl && !nameEl.hasAttribute('data-profile-click')) {
-            nameEl.setAttribute('data-profile-click', 'true');
-            nameEl.style.cursor = 'pointer';
-            nameEl.onclick = (e) => { e.preventDefault(); openProfileModal(); };
-            nameEl.innerText = currentName;
+        // নাম আপডেট করা
+        if (nameEl) {
+            if (!nameEl.hasAttribute('data-profile-click')) {
+                nameEl.setAttribute('data-profile-click', 'true');
+                nameEl.style.cursor = 'pointer';
+                nameEl.onclick = (e) => { e.preventDefault(); openProfileModal(); };
+            }
+            if (nameEl.innerText !== currentName) {
+                nameEl.innerText = currentName;
+            }
         }
     }, 1000);
 
@@ -141,7 +165,6 @@
                 </button>
             </div>
 
-            <!-- Redirect QR Scanner Button -->
             <div style="width:100%; border-top: 1px dashed #3f3f46; margin-top: 5px; padding-top: 15px; text-align: center;">
                 <button id="start-qr-btn" style="background:#10b981; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; transition: 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
                     📷 Open QR Scanner
@@ -208,18 +231,11 @@
             modal.remove();
         };
 
-        // ==========================================
-        // External Browser Redirect Logic for QR Code
-        // ==========================================
         startQrBtn.onclick = () => {
-            // হিস্ট্রিতে রেকর্ড রাখা (যদি আপনার হিস্ট্রি কোড থাকে)
             if(window.addNexusHistory) window.addNexusHistory("Opened External QR Scanner", "📷 QR Scanner");
-            
-            // AppCreator24 থেকে সরাসরি ফোনের ডিফল্ট ব্রাউজার ওপেন করবে
             window.open("https://qr-scaner-tau.vercel.app/", "_blank");
         };
 
-        // Image compression helper
         function compressImage(file, maxSize, callback) {
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -251,4 +267,4 @@
         }
     }
 })();
-        
+    
