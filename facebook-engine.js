@@ -1,47 +1,65 @@
-// NEXUS Facebook Secret Engine (ID Scanner)
+// NEXUS Facebook Secret Engine (Full ID Scanner with Toggle Support)
 (function() {
+    // ১. লোকাল স্টোরেজ থেকে আনলক স্টেট চেক করা
     let fbUnlocked = localStorage.getItem('nexus_fb_unlocked') === 'true';
 
+    // ২. চ্যাটে সিক্রেট কমান্ড ট্র্যাক করার লজিক
     function checkSecretCommand(text) {
-        if (text && text.trim().toLowerCase() === '/facebook') {
-            if (!fbUnlocked) {
-                fbUnlocked = true;
-                localStorage.setItem('nexus_fb_unlocked', 'true');
-                alert("🔓 Secret Unlocked: Facebook ID Scanner is now active!");
-            }
+        const cmd = text.trim().toLowerCase();
+        
+        // বাটন অন করার কমান্ড
+        if (cmd === '/facebook') {
+            localStorage.setItem('nexus_fb_unlocked', 'true');
+            alert("🔓 Facebook Scanner: ENABLED");
+            location.reload(); // সাথে সাথে স্ক্রিনে বাটন দেখানোর জন্য রিফ্রেশ
+        } 
+        // বাটন পুরোপুরি হাইড করার কমান্ড
+        else if (cmd === '/facebook hide') {
+            localStorage.setItem('nexus_fb_unlocked', 'false');
+            alert("🔒 Facebook Scanner: HIDDEN");
+            location.reload(); // সাথে সাথে স্ক্রিন থেকে বাটন সরানোর জন্য রিফ্রেশ
         }
     }
 
+    // ইউজার এন্টার চাপলে কমান্ড চেক করবে
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.target.tagName.match(/INPUT|TEXTAREA/i)) {
             checkSecretCommand(e.target.value);
         }
     });
 
+    // ইউজার সেন্ড বাটনে ক্লিক করলে কমান্ড চেক করবে
     window.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
             const inputs = document.querySelectorAll('input[type="text"], textarea');
             inputs.forEach(input => checkSecretCommand(input.value));
         }
     });
 
-    // বাটন তৈরি
-    const initFbBtn = setInterval(() => {
-        if (fbUnlocked && !document.getElementById('nexus-fb-fab')) {
-            const fab = document.createElement('button');
-            fab.id = 'nexus-fb-fab';
-            fab.innerHTML = '📘 FB Scanner';
-            fab.style.cssText = "position: fixed; bottom: 140px; right: 20px; background: #1877f2; color: white; padding: 12px 20px; border-radius: 50px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4); z-index: 999998; transition: 0.3s; display: flex; align-items: center; gap: 8px;";
-            
-            fab.onmouseover = () => { fab.style.transform = "scale(1.05)"; };
-            fab.onmouseout = () => { fab.style.transform = "scale(1)"; };
-            
-            fab.onclick = (e) => { e.preventDefault(); openFbModal(); };
-            document.body.appendChild(fab);
+    // ৩. বাটন তৈরি ও রিমুভ করার লুপ (Notes এর ঠিক ওপরে bottom: 140px এ থাকবে)
+    setInterval(() => {
+        const existingFab = document.getElementById('nexus-fb-fab');
+        
+        if (fbUnlocked) {
+            if (!existingFab) {
+                const fab = document.createElement('button');
+                fab.id = 'nexus-fb-fab';
+                fab.innerHTML = '📘 FB Scanner';
+                fab.style.cssText = "position: fixed; bottom: 140px; right: 20px; background: #1877f2; color: white; padding: 12px 20px; border-radius: 50px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4); z-index: 999998; transition: 0.3s; display: flex; align-items: center; gap: 8px;";
+                
+                fab.onmouseover = () => { fab.style.transform = "scale(1.05)"; };
+                fab.onmouseout = () => { fab.style.transform = "scale(1)"; };
+                
+                fab.onclick = (e) => { e.preventDefault(); openFbModal(); };
+                document.body.appendChild(fab);
+            }
+        } else {
+            // যদি হাইড কমান্ড দেওয়া হয় তবে বাটনটি স্ক্রিন থেকে মুছে যাবে
+            if (existingFab) existingFab.remove();
         }
     }, 1000);
 
-    // পপ-আপ ও API লজিক
+    // ৪. ফেসবুক পপ-আপ এবং আইডি স্ক্যানিং লজিক
     function openFbModal() {
         let modal = document.getElementById('fb-modal');
         if (modal) modal.remove();
@@ -82,7 +100,7 @@
             resDiv.innerHTML = `<span style="color:#38bdf8; font-size:13px; text-align:center; animation: pulse 1.5s infinite;">⏳ Scanning Profile Data...</span>`;
 
             try {
-                // ID থেকে সমস্ত ডেটা বের করার জন্য API URL (username বা user_id প্যারামিটার দিয়ে)
+                // ইউজার আইডি থেকে সমস্ত ডেটা স্ক্র্যাপ করার এন্ডপয়েন্ট
                 const url = `https://facebook-scraper3.p.rapidapi.com/user/info?username=${encodeURIComponent(fbId)}`;
 
                 const response = await fetch(url, {
@@ -90,7 +108,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'x-rapidapi-host': 'facebook-scraper3.p.rapidapi.com',
-                        'x-rapidapi-key': 'bae47b7f91msh5916b9a175c7aeap1387ddjsncec825a93b2a' // আপনার API Key
+                        'x-rapidapi-key': 'bae47b7f91msh5916b9a175c7aeap1387ddjsncec825a93b2a'
                     }
                 });
                 
@@ -98,7 +116,7 @@
                 
                 if (window.addNexusHistory) window.addNexusHistory(`FB Scanned: ${fbId}`, "📘 FB Scanner");
 
-                // API Error Handling
+                // এপিআই এরর হ্যান্ডলিং
                 if (data.message && (data.message.includes("exceeded") || data.message.includes("Invalid"))) {
                     resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API Error: ${data.message}</span>`;
                     return;
@@ -108,15 +126,14 @@
                     return;
                 }
 
-                // ID এর সমস্ত ডেটা স্ক্রিনে সুন্দর করে প্রিন্ট করা
+                // সফলভাবে ডেটা পাওয়া গেলে তা সুন্দর করে স্ক্রিনে জেসন ফরম্যাটে দেখানো
                 if (data && Object.keys(data).length > 0) {
-                    // যদি নামের ডেটা আলাদা করে পাওয়া যায়, তবে সেটা হাইলাইট করা হবে
                     const displayName = data.name || data.title || fbId; 
                     
                     resDiv.innerHTML = `
                         <h3 style="color:#4ade80; margin:0 0 10px 0; font-size:15px; text-align:center; border-bottom: 1px dashed #3f3f46; padding-bottom: 5px;">✅ Profile Scanned: ${displayName}</h3>
                         
-                        <div style="font-size:12px; color:#a1a1aa; background:#27272a; padding:10px; border-radius:5px; line-height: 1.5; overflow-wrap: break-word;">
+                        <div style="font-size:12px; color:#a1a1aa; background:#27272a; padding:10px; border-radius:5px; line-height: 1.5; overflow-wrap: break-word; font-family:monospace;">
                             <span style="color:#38bdf8; font-weight:bold;">All Extracted Data:</span><br><br>
                             ${JSON.stringify(data, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
                         </div>
@@ -130,4 +147,4 @@
         };
     }
 })();
-                                                   
+        
