@@ -1,4 +1,4 @@
-// NEXUS Profile, UI Customizer & QR Scanner Engine
+// NEXUS Profile, UI Customizer & QR Scanner Engine (Camera Fix Included)
 (function() {
     function applyAppBackground() {
         const savedBg = localStorage.getItem('nexus_app_bg');
@@ -141,9 +141,7 @@
                 </button>
             </div>
 
-            <!-- ============================================== -->
-            <!-- নতুন যোগ করা QR Code Scanner অপশন -->
-            <!-- ============================================== -->
+            <!-- QR Code Scanner Button -->
             <div style="width:100%; border-top: 1px dashed #3f3f46; margin-top: 5px; padding-top: 15px; text-align: center;">
                 <button id="start-qr-btn" style="background:#10b981; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; transition: 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
                     📷 Scan QR Code
@@ -214,14 +212,13 @@
             modal.remove();
         };
 
-        // QR Scanner Logic
+        // QR Scanner Logic - Updated with Manual Permission Step
         startQrBtn.onclick = () => {
-            modal.style.display = 'none'; // প্রোফাইল পপ-আপটি লুকিয়ে রাখা হলো
+            modal.style.display = 'none'; 
             openQRScannerModal();
         };
 
         function openQRScannerModal() {
-            // যদি আগে থেকে স্ক্যানার লাইব্রেরি না থাকে তবে ডাইনামিকালি লোড করবে
             if (typeof Html5Qrcode === 'undefined') {
                 const script = document.createElement('script');
                 script.src = "https://unpkg.com/html5-qrcode";
@@ -240,54 +237,62 @@
             qrModal.id = 'qr-modal';
             qrModal.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 9999999; display: flex; flex-direction: column; align-items: center; justify-content: center;";
             
+            // Step 1: Manual Permission Screen
             qrModal.innerHTML = `
-                <div style="width: 90%; max-width: 400px; background: #18181b; padding: 20px; border-radius: 16px; border: 1px solid #10b981;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                        <h2 style="color:#10b981; margin:0; font-size: 18px;">📷 QR Code Scanner</h2>
-                        <button id="close-qr-btn" style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">X</button>
-                    </div>
-                    
-                    <!-- ক্যামেরা ভিউ এখানে আসবে -->
-                    <div id="qr-reader" style="width: 100%; min-height: 250px; background: black; border-radius: 8px; overflow: hidden; position: relative;"></div>
-                    
-                    <div id="qr-result" style="margin-top: 15px; color: #a1a1aa; font-size: 13px; text-align: center; word-break: break-all; background: #27272a; padding: 10px; border-radius: 8px;">
-                        Scanning... Please point camera at a QR code.
-                    </div>
+                <div style="width: 90%; max-width: 400px; background: #18181b; padding: 20px; border-radius: 16px; border: 1px solid #10b981; text-align: center;">
+                    <h2 style="color:#10b981; margin:0 0 10px 0; font-size: 18px;">📷 Camera Permission</h2>
+                    <p style="color:#a1a1aa; font-size: 13px; margin-bottom: 20px;">Please allow camera access to scan QR codes.</p>
+                    <button id="allow-camera-btn" style="background:#10b981; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; margin-bottom: 10px;">Allow Camera</button>
+                    <button id="cancel-camera-btn" style="background:transparent; color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">Cancel</button>
                 </div>
             `;
             document.body.appendChild(qrModal);
 
-            const html5Qrcode = new Html5Qrcode("qr-reader");
-            
-            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                const resultBox = document.getElementById('qr-result');
-                
-                // যদি রেজাল্ট লিংক হয় তবে ক্লিকেবল করা
-                let resultHtml = decodedText;
-                if(decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
-                    resultHtml = `<a href="${decodedText}" target="_blank" style="color:#38bdf8; text-decoration:underline;">${decodedText}</a>`;
-                }
-                
-                resultBox.innerHTML = `<span style="color:#4ade80; font-weight:bold;">✅ Scanned Successfully:</span> <br><br>${resultHtml}`;
-                
-                if(window.addNexusHistory) window.addNexusHistory(`Scanned QR Code`, "📷 QR Scanner");
-
-                // স্ক্যান হওয়ার পর ক্যামেরা বন্ধ করা
-                html5Qrcode.stop().catch(err => console.log(err));
-            };
-            
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            // ব্যাক ক্যামেরা (environment) দিয়ে স্ক্যান শুরু করা
-            html5Qrcode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
-            .catch((err) => {
-                document.getElementById('qr-result').innerHTML = `<span style="color:#ef4444; font-weight:bold;">⚠️ Error: Cannot access camera!</span><br>Please allow camera permission in your browser settings.`;
-            });
-
-            document.getElementById('close-qr-btn').onclick = () => {
-                html5Qrcode.stop().catch(e => console.log(e));
+            document.getElementById('cancel-camera-btn').onclick = () => {
                 qrModal.remove();
-                modal.style.display = 'flex'; // আগের প্রোফাইল পপ-আপ আবার ফিরিয়ে আনা হলো
+                modal.style.display = 'flex'; // Profile modal back
+            };
+
+            // Step 2: Camera UI (After clicking Allow)
+            document.getElementById('allow-camera-btn').onclick = () => {
+                qrModal.innerHTML = `
+                    <div style="width: 90%; max-width: 400px; background: #18181b; padding: 20px; border-radius: 16px; border: 1px solid #10b981;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                            <h2 style="color:#10b981; margin:0; font-size: 18px;">📷 Scanning...</h2>
+                            <button id="close-qr-btn" style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">X</button>
+                        </div>
+                        
+                        <div id="qr-reader" style="width: 100%; min-height: 250px; background: black; border-radius: 8px; overflow: hidden;"></div>
+                        
+                        <div id="qr-result" style="margin-top: 15px; color: #a1a1aa; font-size: 13px; text-align: center; word-break: break-all; background: #27272a; padding: 10px; border-radius: 8px;">
+                            Point camera at a QR code.
+                        </div>
+                    </div>
+                `;
+
+                const html5Qrcode = new Html5Qrcode("qr-reader");
+
+                document.getElementById('close-qr-btn').onclick = () => {
+                    html5Qrcode.stop().catch(e => console.log(e));
+                    qrModal.remove();
+                    modal.style.display = 'flex'; 
+                };
+                
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+                html5Qrcode.start({ facingMode: "environment" }, config, (decodedText) => {
+                    const resultBox = document.getElementById('qr-result');
+                    let resultHtml = decodedText;
+                    if(decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
+                        resultHtml = `<a href="${decodedText}" target="_blank" style="color:#38bdf8; text-decoration:underline;">${decodedText}</a>`;
+                    }
+                    resultBox.innerHTML = `<span style="color:#4ade80; font-weight:bold;">✅ Scanned Successfully:</span> <br><br>${resultHtml}`;
+                    
+                    if(window.addNexusHistory) window.addNexusHistory(`Scanned QR Code`, "📷 QR Scanner");
+                    html5Qrcode.stop().catch(err => console.log(err));
+                }).catch((err) => {
+                    document.getElementById('qr-result').innerHTML = `<span style="color:#ef4444; font-weight:bold;">⚠️ Camera Error!</span><br>Make sure camera permission is granted in browser settings.`;
+                });
             };
         }
 
@@ -324,4 +329,4 @@
         }
     }
 })();
-            
+                  
