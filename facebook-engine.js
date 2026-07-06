@@ -1,42 +1,64 @@
-// NEXUS Facebook Secret Engine (Full ID Scanner with Toggle Support)
+// NEXUS Facebook Secret Engine (Hide/Show Fixed)
 (function() {
-    // ১. লোকাল স্টোরেজ থেকে আনলক স্টেট চেক করা
     let fbUnlocked = localStorage.getItem('nexus_fb_unlocked') === 'true';
 
-    // ২. চ্যাটে সিক্রেট কমান্ড ট্র্যাক করার লজিক
-    function checkSecretCommand(text) {
+    function checkSecretCommand(e, text) {
         const cmd = text.trim().toLowerCase();
         
-        // বাটন অন করার কমান্ড
         if (cmd === '/facebook') {
+            e.stopPropagation(); // নরমাল AI-কে ম্যাসেজ পড়া থেকে থামাবে
+            e.preventDefault();
+            fbUnlocked = true;
             localStorage.setItem('nexus_fb_unlocked', 'true');
             alert("🔓 Facebook Scanner: ENABLED");
-            location.reload(); // সাথে সাথে স্ক্রিনে বাটন দেখানোর জন্য রিফ্রেশ
+            clearInput(e);
         } 
-        // বাটন পুরোপুরি হাইড করার কমান্ড
         else if (cmd === '/facebook hide') {
+            e.stopPropagation();
+            e.preventDefault();
+            fbUnlocked = false;
             localStorage.setItem('nexus_fb_unlocked', 'false');
+            
+            // সাথে সাথে স্ক্রিন থেকে বাটন রিমুভ করা (কোনো রিফ্রেশ ছাড়া)
+            const existingFab = document.getElementById('nexus-fb-fab');
+            if (existingFab) existingFab.remove();
+            
             alert("🔒 Facebook Scanner: HIDDEN");
-            location.reload(); // সাথে সাথে স্ক্রিন থেকে বাটন সরানোর জন্য রিফ্রেশ
+            clearInput(e);
         }
     }
 
-    // ইউজার এন্টার চাপলে কমান্ড চেক করবে
+    function clearInput(e) {
+        if (e.target && e.target.value !== undefined) {
+            e.target.value = '';
+        } else {
+            const input = document.querySelector('input[type="text"], textarea');
+            if (input) input.value = '';
+        }
+    }
+
+    // ইভেন্ট লিসেনারে 'true' যুক্ত করা হয়েছে যাতে এটি সবার আগে কমান্ডটি ক্যাচ করে
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.target.tagName.match(/INPUT|TEXTAREA/i)) {
-            checkSecretCommand(e.target.value);
+            if (e.target.value.trim().toLowerCase().startsWith('/facebook')) {
+                checkSecretCommand(e, e.target.value);
+            }
         }
-    });
+    }, true); 
 
-    // ইউজার সেন্ড বাটনে ক্লিক করলে কমান্ড চেক করবে
     window.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-            const inputs = document.querySelectorAll('input[type="text"], textarea');
-            inputs.forEach(input => checkSecretCommand(input.value));
+            const btn = e.target.closest('button');
+            if (btn && (btn.innerText.includes('Send') || btn.innerHTML.includes('Send') || btn.innerHTML.includes('svg'))) {
+                const input = document.querySelector('input[type="text"], textarea');
+                if (input && input.value.trim().toLowerCase().startsWith('/facebook')) {
+                    checkSecretCommand(e, input.value);
+                }
+            }
         }
-    });
+    }, true);
 
-    // ৩. বাটন তৈরি ও রিমুভ করার লুপ (Notes এর ঠিক ওপরে bottom: 140px এ থাকবে)
+    // বাটন তৈরি ও রিমুভ লজিক
     setInterval(() => {
         const existingFab = document.getElementById('nexus-fb-fab');
         
@@ -50,16 +72,15 @@
                 fab.onmouseover = () => { fab.style.transform = "scale(1.05)"; };
                 fab.onmouseout = () => { fab.style.transform = "scale(1)"; };
                 
-                fab.onclick = (e) => { e.preventDefault(); openFbModal(); };
+                fab.onclick = (ev) => { ev.preventDefault(); openFbModal(); };
                 document.body.appendChild(fab);
             }
         } else {
-            // যদি হাইড কমান্ড দেওয়া হয় তবে বাটনটি স্ক্রিন থেকে মুছে যাবে
-            if (existingFab) existingFab.remove();
+            if (existingFab) existingFab.remove(); // হাইড করা থাকলে বাটন রিমুভ হবে
         }
     }, 1000);
 
-    // ৪. ফেসবুক পপ-আপ এবং আইডি স্ক্যানিং লজিক
+    // পপ-আপ ও API লজিক
     function openFbModal() {
         let modal = document.getElementById('fb-modal');
         if (modal) modal.remove();
@@ -100,7 +121,6 @@
             resDiv.innerHTML = `<span style="color:#38bdf8; font-size:13px; text-align:center; animation: pulse 1.5s infinite;">⏳ Scanning Profile Data...</span>`;
 
             try {
-                // ইউজার আইডি থেকে সমস্ত ডেটা স্ক্র্যাপ করার এন্ডপয়েন্ট
                 const url = `https://facebook-scraper3.p.rapidapi.com/user/info?username=${encodeURIComponent(fbId)}`;
 
                 const response = await fetch(url, {
@@ -116,7 +136,6 @@
                 
                 if (window.addNexusHistory) window.addNexusHistory(`FB Scanned: ${fbId}`, "📘 FB Scanner");
 
-                // এপিআই এরর হ্যান্ডলিং
                 if (data.message && (data.message.includes("exceeded") || data.message.includes("Invalid"))) {
                     resDiv.innerHTML = `<span style="color:#ef4444; font-size:13px; text-align:center;">❌ API Error: ${data.message}</span>`;
                     return;
@@ -126,7 +145,6 @@
                     return;
                 }
 
-                // সফলভাবে ডেটা পাওয়া গেলে তা সুন্দর করে স্ক্রিনে জেসন ফরম্যাটে দেখানো
                 if (data && Object.keys(data).length > 0) {
                     const displayName = data.name || data.title || fbId; 
                     
@@ -147,4 +165,4 @@
         };
     }
 })();
-        
+            
