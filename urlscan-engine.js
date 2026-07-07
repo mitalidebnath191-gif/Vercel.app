@@ -10,7 +10,7 @@
             cloudBtn.id = 'urlscan-cloud-btn';
             
             // বাটনের ডিজাইন
-            cloudBtn.style.cssText = "background:#000000; color:black; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; transition: 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 12px rgba(255, 69, 0, 0.3); margin-top: 10px;";
+            cloudBtn.style.cssText = "background:#000000; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; transition: 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 12px rgba(255, 69, 0, 0.3); margin-top: 10px;";
             cloudBtn.innerHTML = "🔍 Open urlscan.io";
             
             // সরাসরি ওয়েবসাইটে রিডাইরেক্ট করবে
