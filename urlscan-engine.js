@@ -1,11 +1,11 @@
 // NEXUS urlscan.io Cloud Deep Scanner Engine (Standalone File)
 (function() {
     setInterval(() => {
-        // লোকাল URL Safety Checker বাটনটি খুঁজছে
-        const safetyBtn = document.getElementById('url-safety-btn');
+        // ইন্টারনেট স্পিড টেস্ট বাটনটি খুঁজছে
+        const speedBtn = document.getElementById('speed-test-btn');
         
-        // যদি লোকাল বাটন থাকে কিন্তু ক্লাউড স্ক্যান বাটন না থাকে, তবে এটি তৈরি করবে
-        if (safetyBtn && !document.getElementById('urlscan-cloud-btn')) {
+        // যদি স্পিড টেস্ট বাটন থাকে কিন্তু ক্লাউড স্ক্যান বাটন না থাকে, তবে এটি তৈরি করবে
+        if (speedBtn && !document.getElementById('urlscan-cloud-btn')) {
             const cloudBtn = document.createElement('button');
             cloudBtn.id = 'urlscan-cloud-btn';
             
@@ -20,7 +20,8 @@
                 openUrlScanModal(profileModal);
             };
             
-            safetyBtn.parentNode.appendChild(cloudBtn);
+            // ইন্টারনেট স্পিড টেস্ট বাটনের ঠিক নিচেই বসিয়ে দেবে (insertBefore ব্যবহার করে)
+            speedBtn.parentNode.insertBefore(cloudBtn, speedBtn.nextSibling);
         }
     }, 1000);
 
@@ -48,6 +49,7 @@
                 
                 <button id="submit-urlscan-btn" style="background:#ff4500; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px;">Launch Cloud Scan</button>
 
+                <!-- রেজাল্ট দেখানোর বক্স -->
                 <div id="urlscan-result-box" style="display:none; flex-direction:column; gap:8px; background: #27272a; padding: 15px; border-radius: 8px; border: 1px dashed #52525b; font-size:13px; color:white; word-break:break-all;"></div>
                 
                 <p style="color:#71717a; font-size:10px; margin:0; text-align:center;">Powered by urlscan.io API. It will capture a live screenshot and analyze server behavior globally.</p>
@@ -130,4 +132,3 @@
         };
     }
 })();
-          
