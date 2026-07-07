@@ -1,4 +1,4 @@
-// NEXUS Global AI Chat Engine (PDF, Image & Text with GPT-4o)
+// NEXUS Global AI Chat Engine (Fixed Auto-Placement)
 (function() {
     // পিডিএফ এবং এআই-এর জন্য প্রয়োজনীয় লাইব্রেরি লোড করা
     if (!document.getElementById('pdfjs-lib')) {
@@ -18,11 +18,13 @@
     }
 
     setInterval(() => {
-        // Developer Hub বাটনটি খুঁজছে
-        const devHub = document.getElementById('developer-hub-container');
+        // বাটনটি আগে থেকেই আছে কি না চেক করছে
+        if (document.getElementById('global-ai-chat-btn')) return;
+
+        // Developer Hub অথবা Offline Scanner বাটন খুঁজছে
+        const targetNode = document.getElementById('developer-hub-container') || document.getElementById('offline-scanner-btn');
         
-        // যদি Developer Hub থাকে কিন্তু Global Chat না থাকে
-        if (devHub && !document.getElementById('global-ai-chat-btn')) {
+        if (targetNode) {
             const chatBtn = document.createElement('button');
             chatBtn.id = 'global-ai-chat-btn';
             
@@ -36,8 +38,8 @@
                 openGlobalChatModal(profileModal);
             };
             
-            // Developer Hub এর ঠিক নিচে বসিয়ে দেবে
-            devHub.parentNode.insertBefore(chatBtn, devHub.nextSibling);
+            // কাঙ্ক্ষিত বাটনের ঠিক নিচে বসিয়ে দেবে
+            targetNode.parentNode.insertBefore(chatBtn, targetNode.nextSibling);
         }
     }, 1000);
 
@@ -67,7 +69,7 @@
                     <input type="file" id="chat-file-upload" accept=".pdf, image/*" style="display:none;">
                     <button id="attach-file-btn" style="background:#3f3f46; color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;">📎</button>
                     
-                    <input type="text" id="chat-input-msg" placeholder="Type a message or ask about the file..." style="flex:1; background:#18181b; border:1px solid #52525b; color:white; padding:12px; border-radius:20px; font-size:14px; outline:none;">
+                    <input type="text" id="chat-input-msg" placeholder="Type a message..." style="flex:1; background:#18181b; border:1px solid #52525b; color:white; padding:12px; border-radius:20px; font-size:14px; outline:none;">
                     
                     <button id="send-chat-btn" style="background:#ec4899; color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(236, 72, 153, 0.4);">➤</button>
                 </div>
@@ -109,11 +111,8 @@
                 msgDiv.style.background = "#334155";
                 msgDiv.style.color = "#cbd5e1";
                 msgDiv.style.borderBottomLeftRadius = "2px";
-                if (isHtml) {
-                    msgDiv.innerHTML = text;
-                } else {
-                    msgDiv.innerText = text;
-                }
+                if (isHtml) msgDiv.innerHTML = text;
+                else msgDiv.innerText = text;
             }
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -173,7 +172,6 @@
             }
 
             try {
-                // OpenAI GPT-4o মডেল ফিক্স করা হলো (?model=openai)
                 const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(fullPrompt)}?model=openai`);
                 const aiResponseText = await response.text();
 
@@ -183,7 +181,3 @@
                     .replace(/\n/g, '<br>')
                     .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
                     .replace(/
-http://googleusercontent.com/immersive_entry_chip/0
-
-ফাইলটি সেভ করে অ্যাপটি একবার রিফ্রেশ দিন। এখন দেখবেন **"🌍 Global AI Chat"** বাটনটি একদম **"👨‍💻 Developer Only"** সেকশনের নিচে চলে এসেছে। আর এটি এখন পুরোপুরি GPT-4o এর শক্তি ব্যবহার করে আপনার সব প্রশ্নের উত্তর দেবে!
-              
