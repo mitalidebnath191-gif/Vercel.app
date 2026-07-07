@@ -1,31 +1,25 @@
-// NEXUS urlscan.io Cloud Deep Scanner Engine (Standalone File)
+// NEXUS urlscan.io Cloud Deep Scanner Engine (Fixed CORS Issue)
 (function() {
     setInterval(() => {
-        // ইন্টারনেট স্পিড টেস্ট বাটনটি খুঁজছে
         const speedBtn = document.getElementById('speed-test-btn');
         
-        // যদি স্পিড টেস্ট বাটন থাকে কিন্তু ক্লাউড স্ক্যান বাটন না থাকে, তবে এটি তৈরি করবে
         if (speedBtn && !document.getElementById('urlscan-cloud-btn')) {
             const cloudBtn = document.createElement('button');
             cloudBtn.id = 'urlscan-cloud-btn';
             
-            // বাটনের ডিজাইন (ইউনিক লুক দেওয়ার জন্য সুন্দর লাল-কমলা থিম)
             cloudBtn.style.cssText = "background:#ff4500; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; transition: 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 12px rgba(255, 69, 0, 0.3); margin-top: 10px;";
             cloudBtn.innerHTML = "🔍 urlscan.io Deep Scan";
             
-            // বাটনে ক্লিক করলে মূল প্রোফাইল পপ-আপ লুকিয়ে নতুন উইন্ডো খুলবে
             cloudBtn.onclick = () => {
                 const profileModal = document.getElementById('profile-modal');
                 if(profileModal) profileModal.style.display = 'none';
                 openUrlScanModal(profileModal);
             };
             
-            // ইন্টারনেট স্পিড টেস্ট বাটনের ঠিক নিচেই বসিয়ে দেবে (insertBefore ব্যবহার করে)
             speedBtn.parentNode.insertBefore(cloudBtn, speedBtn.nextSibling);
         }
     }, 1000);
 
-    // ক্লাউড স্ক্যানার পপ-আপ উইন্ডো
     function openUrlScanModal(profileModal) {
         let modal = document.getElementById('urlscan-modal');
         if (modal) modal.remove();
@@ -49,10 +43,7 @@
                 
                 <button id="submit-urlscan-btn" style="background:#ff4500; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px;">Launch Cloud Scan</button>
 
-                <!-- রেজাল্ট দেখানোর বক্স -->
                 <div id="urlscan-result-box" style="display:none; flex-direction:column; gap:8px; background: #27272a; padding: 15px; border-radius: 8px; border: 1px dashed #52525b; font-size:13px; color:white; word-break:break-all;"></div>
-                
-                <p style="color:#71717a; font-size:10px; margin:0; text-align:center;">Powered by urlscan.io API. It will capture a live screenshot and analyze server behavior globally.</p>
             </div>
         `;
         document.body.appendChild(modal);
@@ -62,7 +53,6 @@
         const urlInput = document.getElementById('urlscan-input');
         const resultBox = document.getElementById('urlscan-result-box');
 
-        // আপনার দেওয়া urlscan.io API Key
         const API_KEY = "019f2fb8-cb80-763b-a7bd-978c8d456002";
 
         closeBtn.onclick = () => {
@@ -81,13 +71,16 @@
                 urlText = 'http://' + urlText; 
             }
 
-            scanBtn.innerHTML = "⏳ Connecting to urlscan.io...";
+            scanBtn.innerHTML = "⏳ Scanning Server...";
             scanBtn.disabled = true;
             resultBox.style.display = 'flex';
-            resultBox.innerHTML = `<span style="color:#38bdf8; text-align:center; font-weight:bold;">Initiating Deep Scan... Please wait.</span>`;
+            resultBox.innerHTML = `<span style="color:#38bdf8; text-align:center; font-weight:bold;">Bypassing security & connecting...</span>`;
 
             try {
-                const response = await fetch('https://urlscan.io/api/v1/scan/', {
+                // CORS Proxy ব্যবহার করা হলো যাতে ব্রাউজার ব্লক না করে
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://urlscan.io/api/v1/scan/');
+                
+                const response = await fetch(proxyUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -108,22 +101,22 @@
                         <div style="text-align:center;">
                             <span style="color:#22c55e; font-weight:bold; font-size:16px;">✅ Scan Successfully Launched!</span>
                         </div>
-                        <p style="margin:5px 0 10px 0; color:#a1a1aa; text-align:center;">urlscan.io is deeply analyzing the website's components.</p>
+                        <p style="margin:5px 0 10px 0; color:#a1a1aa; text-align:center;">urlscan.io is deep scanning the servers globally.</p>
                         <a href="${reportUrl}" target="_blank" style="background:#22c55e; color:white; padding:10px; border-radius:8px; text-decoration:none; text-align:center; font-weight:bold; display:block;">📊 View Live Scan Report</a>
-                        <p style="color:#ef4444; font-size:10px; margin:10px 0 0 0; text-align:center;">(Note: It takes about 10-15 seconds for urlscan.io to prepare the final dashboard on their site)</p>
                     `;
                     
                     if(window.addNexusHistory) window.addNexusHistory("Launched Cloud URL Scan", "🛡️ urlscan.io");
                 } else {
                     resultBox.innerHTML = `
-                        <span style="color:#ef4444; font-weight:bold; text-align:center;">❌ API Error</span>
-                        <p style="margin:5px 0 0 0; color:#fca5a5; text-align:center;">${data.message || "Failed to initiate scan."}</p>
+                        <span style="color:#ef4444; font-weight:bold; text-align:center;">❌ API Request Failed</span>
+                        <p style="margin:5px 0 0 0; color:#fca5a5; text-align:center;">${data.message || data.description || "Unknown Error"}</p>
                     `;
                 }
             } catch (error) {
+                // যদি প্রক্সিও কাজ না করে তখন আসল এরর মেসেজ দেখাবে
                 resultBox.innerHTML = `
-                    <span style="color:#f59e0b; font-weight:bold; text-align:center;">⚠️ Connection Error</span>
-                    <p style="margin:5px 0 0 0; color:#fcd34d; text-align:center;">Failed to connect to cloud database.</p>
+                    <span style="color:#f59e0b; font-weight:bold; text-align:center;">⚠️ Proxy/Network Error</span>
+                    <p style="margin:5px 0 0 0; color:#fcd34d; text-align:center;">${error.message}</p>
                 `;
             }
 
@@ -132,3 +125,4 @@
         };
     }
 })();
+            
