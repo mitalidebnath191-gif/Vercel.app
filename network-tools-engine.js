@@ -1,17 +1,21 @@
-// NEXUS Network, DNS & Webmaster Pro Tools Hub
+// NEXUS Network, DNS & Webmaster Pro Tools Hub (Auto-Placement Fixed)
 (function() {
     setInterval(() => {
+        // বাটনটি আগে থেকেই আছে কি না চেক করছে
         if (document.getElementById('network-hub-container')) return;
 
-        // Device Pro Hub button ti khujche
-        const deviceHub = document.getElementById('device-pro-hub-container');
+        // আগের যেকোনো একটি বাটন খুঁজছে (যাতে একটি না পেলে অন্যটির নিচে বসতে পারে)
+        const targetNode = document.getElementById('device-pro-hub-container') || 
+                           document.getElementById('offline-hub-container') ||
+                           document.getElementById('finance-hub-container') ||
+                           document.getElementById('doc-hub-container');
         
-        if (deviceHub) {
+        if (targetNode) {
             const container = document.createElement('div');
             container.id = 'network-hub-container';
             container.style.cssText = "width: 100%; margin-top: 10px;";
             
-            // Show/Hide button (Sky Blue / Cyan theme)
+            // Show/Hide বাটন (Sky Blue / Cyan theme)
             const toggleBtn = document.createElement('button');
             toggleBtn.id = 'network-hub-btn';
             toggleBtn.style.cssText = "background:#0ea5e9; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; transition: 0.3s; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);";
@@ -64,7 +68,8 @@
             container.appendChild(toggleBtn);
             container.appendChild(listDiv);
             
-            deviceHub.parentNode.insertBefore(container, deviceHub.nextSibling);
+            // কাঙ্ক্ষিত বাটনের ঠিক নিচে বসিয়ে দেবে
+            targetNode.parentNode.insertBefore(container, targetNode.nextSibling);
         }
     }, 1000);
 
@@ -78,9 +83,6 @@
         
         let title = "", icon = "", contentHTML = "";
 
-        // ==========================================
-        // 1. DNS & ASN Lookup (Free Google API)
-        // ==========================================
         if (action === "open_dns_modal") {
             title = "DNS & ASN Lookup"; icon = "📡";
             contentHTML = `
@@ -90,9 +92,6 @@
                 <p style="color:#71717a; font-size:10px; margin-top:5px; text-align:center;">Powered by Google DoH API.</p>
             `;
         } 
-        // ==========================================
-        // 2. HTTP Header Analyzer (Free HackerTarget API)
-        // ==========================================
         else if (action === "open_headers_modal") {
             title = "HTTP Header Analyzer"; icon = "🕵️";
             contentHTML = `
@@ -101,9 +100,6 @@
                 <div id="hdr-output" style="width:100%; background:#1e293b; border:1px solid #334155; color:#cbd5e1; padding:10px; border-radius:8px; margin-top:10px; height:200px; overflow-y:auto; font-family:monospace; font-size:12px; white-space:pre-wrap;">Headers will appear here...</div>
             `;
         }
-        // ==========================================
-        // 3. IP Range Calculator (100% Offline)
-        // ==========================================
         else if (action === "open_ip_modal") {
             title = "IP Range Calculator"; icon = "🧮";
             contentHTML = `
@@ -112,9 +108,6 @@
                 <div id="ip-output" style="width:100%; background:#1e293b; border:1px solid #334155; color:#cbd5e1; padding:15px; border-radius:8px; margin-top:10px; line-height:1.6; font-size:13px;">Result will appear here...</div>
             `;
         }
-        // ==========================================
-        // 4. Open Graph Preview (Free AllOrigins API)
-        // ==========================================
         else if (action === "open_og_modal") {
             title = "Open Graph Preview"; icon = "🖼️";
             contentHTML = `
@@ -125,9 +118,6 @@
                 </div>
             `;
         }
-        // ==========================================
-        // 5. User-Agent Generator (100% Offline)
-        // ==========================================
         else if (action === "open_ua_modal") {
             title = "User-Agent Generator"; icon = "💻";
             contentHTML = `
@@ -146,9 +136,6 @@
                 <textarea id="ua-output" readonly style="width:100%; background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:10px; border-radius:8px; margin-top:10px; height:80px; resize:none; font-family:monospace;"></textarea>
             `;
         }
-        // ==========================================
-        // 6. robots.txt Generator (100% Offline)
-        // ==========================================
         else if (action === "open_robots_modal") {
             title = "robots.txt Generator"; icon = "🤖";
             contentHTML = `
@@ -163,7 +150,6 @@
 
         modal.innerHTML = `
             <div style="width: 100%; max-width: 450px; background: #18181b; padding: 20px; border-radius: 16px; border: 1px solid #0ea5e9; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
-                
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #3f3f46; padding-bottom: 10px;">
                     <h2 style="color:#38bdf8; font-weight:bold; font-size:17px; margin:0;">${icon} ${title}</h2>
                     <button id="close-net-btn" style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">X</button>
@@ -179,8 +165,6 @@
             if(profileModal) profileModal.style.display = 'flex';
         };
 
-        // --- Logic Implementations --- //
-
         if (action === "open_dns_modal") {
             document.getElementById('dns-btn').onclick = async () => {
                 const domain = document.getElementById('dns-input').value.trim();
@@ -188,26 +172,22 @@
                 if(!domain) return alert("Enter a domain!");
                 out.innerHTML = "⏳ Scanning with Google DNS...";
                 try {
-                    // ANY type is deprecated, fetching A and TXT for demo
                     const resA = await fetch(`https://dns.google/resolve?name=${domain}&type=A`);
                     const dataA = await resA.json();
                     let resultHtml = `<b style="color:#10b981;">[A Records]</b><br>`;
-                    if(dataA.Answer) {
-                        dataA.Answer.forEach(ans => resultHtml += `${ans.name} -> ${ans.data}<br>`);
-                    } else resultHtml += "No A records found.<br>";
+                    if(dataA.Answer) { dataA.Answer.forEach(ans => resultHtml += `${ans.name} -> ${ans.data}<br>`); } 
+                    else resultHtml += "No A records found.<br>";
                     
                     const resTXT = await fetch(`https://dns.google/resolve?name=${domain}&type=TXT`);
                     const dataTXT = await resTXT.json();
                     resultHtml += `<br><b style="color:#10b981;">[TXT Records]</b><br>`;
-                    if(dataTXT.Answer) {
-                        dataTXT.Answer.forEach(ans => resultHtml += `${ans.data}<br>`);
-                    } else resultHtml += "No TXT records found.<br>";
+                    if(dataTXT.Answer) { dataTXT.Answer.forEach(ans => resultHtml += `${ans.data}<br>`); } 
+                    else resultHtml += "No TXT records found.<br>";
 
                     out.innerHTML = resultHtml;
                 } catch(e) { out.innerHTML = "❌ Error fetching DNS."; }
             };
         } 
-        
         else if (action === "open_headers_modal") {
             document.getElementById('hdr-btn').onclick = async () => {
                 let url = document.getElementById('hdr-input').value.trim();
@@ -222,7 +202,6 @@
                 } catch(e) { out.innerHTML = "❌ Error fetching headers. Site may be blocking API."; }
             };
         }
-
         else if (action === "open_ip_modal") {
             document.getElementById('ip-btn').onclick = () => {
                 const input = document.getElementById('ip-input').value.trim();
@@ -256,7 +235,6 @@
                 } catch(e) { out.innerHTML = "❌ Invalid IP Format."; }
             };
         }
-
         else if (action === "open_og_modal") {
             document.getElementById('og-btn').onclick = async () => {
                 let url = document.getElementById('og-input').value.trim();
@@ -275,19 +253,21 @@
                     
                     let imgHtml = img ? `<img src="${img}" style="width:100%; border-radius:6px; object-fit:cover; max-height:150px;">` : `<div style="padding:10px; background:#334155; text-align:center; border-radius:6px;">No Image</div>`;
                     
-                    out.innerHTML = `
-                        ${imgHtml}
-                        <b style="color:white; margin-top:5px;">${title}</b>
-                        <span style="font-size:11px; color:#94a3b8;">${desc}</span>
-                    `;
+                    out.innerHTML = `${imgHtml}<b style="color:white; margin-top:5px;">${title}</b><span style="font-size:11px; color:#94a3b8;">${desc}</span>`;
                 } catch(e) { out.innerHTML = "❌ Failed to fetch Open Graph data."; }
             };
         }
-
         else if (action === "open_ua_modal") {
             document.getElementById('ua-btn').onclick = () => {
                 const os = document.getElementById('ua-os').value;
                 const browser = document.getElementById('ua-browser').value;
                 let ua = "";
-                
-                if (os === "win" && browser === "chr") ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, l
+                if (os === "win" && browser === "chr") ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36";
+                else if (os === "mac" && browser === "saf") ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15";
+                else if (os === "and" && browser === "chr") ua = "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36";
+                else if (os === "ios" && browser === "saf") ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+                else ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0";
+                document.getElementById('ua-output').value = ua;
+            };
+        }
+        else if (action === "open_robots_modal") {
